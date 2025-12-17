@@ -38,10 +38,12 @@
         }
         @media (prefers-color-scheme: dark) { 
             body { background-color: #0a140d; } 
+            /* 修复编辑器在暗色下的文字颜色 */
             .ProseMirror { color: #e2e8f0 !important; }
             .ProseMirror p.is-editor-empty:first-child::before { color: #4a5568 !important; }
         }
 
+        /* Slash Menu 样式优化 */
         #slash-menu {
             position: absolute;
             z-index: 100;
@@ -81,11 +83,9 @@
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         #settings-panel.open { transform: translateX(0); }
-        article { border-radius: 1rem !important; }
         
-        /* 解决 iOS 橡皮弩回弹背景色不一致 */
-        html { background-color: #f5f8f6; }
-        @media (prefers-color-scheme: dark) { html { background-color: #0a140d; } }
+        /* 全局卡片精致化 */
+        article { border-radius: 1rem !important; }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display antialiased transition-colors">
@@ -97,7 +97,6 @@
         </button>
         <h1 class="text-lg font-bold dark:text-white flex items-center gap-2">
             <span class="text-primary material-symbols-outlined !text-[20px]">graphic_eq</span> echo
-            <span id="sync-indicator" class="text-[10px] font-normal opacity-40 ml-1">Local</span>
         </h1>
         <button class="p-2 -mr-2 text-gray-900 dark:text-white"><span class="material-symbols-outlined !text-[26px]">search</span></button>
     </div>
@@ -105,7 +104,7 @@
 
 <main id="memo-list" class="w-full max-w-md mx-auto px-4 pt-24 pb-48 flex flex-col gap-5"></main>
 
-<div id="settings-panel" class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)] overflow-y-auto">
+<div id="settings-panel" class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)]">
     <div class="flex items-center justify-between py-6">
         <h2 class="text-2xl font-bold dark:text-white">设置</h2>
         <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900">
@@ -113,16 +112,6 @@
         </button>
     </div>
     <div class="space-y-4">
-        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
-            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">云同步 (Firebase)</p>
-            <div id="auth-section">
-                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
-                    <span>使用 Google 登录</span>
-                    <span class="material-symbols-outlined text-primary">login</span>
-                </button>
-            </div>
-        </div>
-
         <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
             <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">数据管理</p>
             <button onclick="exportData()" class="w-full text-left py-3 border-b border-black/5 dark:border-white/5 flex justify-between dark:text-white">
@@ -157,194 +146,207 @@
         </div>
     </div>
 </div>
-
 <script type="module">
-    // Firebase Imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
     import { Editor } from 'https://esm.sh/@tiptap/core'
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
     import Image from 'https://esm.sh/@tiptap/extension-image'
 
-    // Firebase Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyA6MZ_p5lVuy8TMAqiuV6IRx9fggV44lQs",
-        authDomain: "outpost-8d74e.firebaseapp.com",
-        databaseURL: "https://outpost-medium-20250810.asia-southeast1.firebasedatabase.app/",
-        projectId: "outpost-8d74e",
-        storageBucket: "outpost-8d74e.firebasestorage.app",
-        messagingSenderId: "724993324937",
-        appId: "1:724993324937:web:ce6c7e6b06489331c79358"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
-    const provider = new GoogleAuthProvider();
-
     let db = null;
     let manualTags = [];
-    let currentUser = null;
 
-    // --- Auth Logic ---
-    onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        const authSection = document.getElementById('auth-section');
-        const syncIndicator = document.getElementById('sync-indicator');
-        
-        if (user) {
-            authSection.innerHTML = `
-                <div class="flex items-center justify-between py-2">
-                    <div class="flex items-center gap-3">
-                        <img src="${user.photoURL}" class="w-8 h-8 rounded-full border border-primary/20">
-                        <div class="text-sm">
-                            <p class="font-bold dark:text-white">${user.displayName}</p>
-                            <p class="text-[10px] opacity-50 dark:text-white">${user.email}</p>
-                        </div>
-                    </div>
-                    <button onclick="logout()" class="text-red-500 text-xs font-bold uppercase tracking-wider">退出</button>
-                </div>
-            `;
-            if (user.email === 'alexszhang@gmail.com') {
-                syncIndicator.innerText = "Cloud Active";
-                syncIndicator.classList.replace('opacity-40', 'text-primary');
-            } else {
-                syncIndicator.innerText = "ReadOnly (Alex Only)";
-            }
-        } else {
-            authSection.innerHTML = `
-                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
-                    <span>使用 Google 登录</span>
-                    <span class="material-symbols-outlined text-primary">login</span>
-                </button>
-            `;
-            syncIndicator.innerText = "Local";
-            syncIndicator.classList.replace('text-primary', 'opacity-40');
-        }
-    });
-
-    window.loginGoogle = async () => {
-        try { await signInWithPopup(auth, provider); } 
-        catch (err) { alert("登录失败: " + err.message); }
+    // --- 1. 全局函数挂载 (确保 HTML onclick 可用) ---
+    window.toggleSettings = (show) => {
+        const panel = document.getElementById('settings-panel');
+        if (panel) panel.classList.toggle('open', show);
     };
-    window.logout = () => signOut(auth);
 
-    // --- IndexedDB ---
-    const initDB = () => {
-        const request = indexedDB.open('EchoPWA_Firebase_V1', 1);
-        request.onupgradeneeded = (e) => {
-            const d = e.target.result;
-            if (!d.objectStoreNames.contains('memos')) d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+    window.exportData = () => {
+        if (!db) return alert("数据库未就绪");
+        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+            const data = JSON.stringify(e.target.result, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `echo-memos-${Date.now()}.json`;
+            a.click();
         };
-        request.onsuccess = (e) => { db = e.target.result; renderMemos(); };
     };
+
+    window.clearAllData = () => {
+        if (confirm("确定永久删除所有记录？此操作不可撤销。")) {
+            const tx = db.transaction('memos', 'readwrite').objectStore('memos').clear();
+            tx.onsuccess = () => {
+                renderMemos();
+                toggleSettings(false);
+            };
+        }
+    };
+
+    // --- 2. 数据库安全初始化 ---
+    const initDB = () => {
+        const request = indexedDB.open('EchoPWA_Final_V1', 1); // 升级库名确保结构刷新
+        request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains('memos')) {
+                database.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+            }
+        };
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            console.log("Database connected successfully.");
+            renderMemos();
+        };
+        request.onerror = (e) => console.error("Database error:", e.target.error);
+    };
+
     initDB();
 
-    // --- Tiptap ---
+    // --- 3. Tiptap 编辑器逻辑 ---
     const menu = document.getElementById('slash-menu');
     const hideMenu = () => { if(menu) menu.style.display = 'none'; };
     const showMenu = () => { if(menu) menu.style.display = 'block'; };
 
     const editor = new Editor({
         element: document.querySelector('#editor'),
-        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '输入 / 唤起指令...' })],
+        extensions: [
+            StarterKit,
+            Image,
+            Placeholder.configure({ placeholder: '在此记录想法...' })
+        ],
         onUpdate: ({ editor }) => {
             const text = editor.getText();
+            // 菜单逻辑
             if (!text.includes('/')) hideMenu();
             if (text.endsWith('/')) showMenu();
+            
+            // /- 标签快捷指令
             if (text.endsWith('/-')) {
                 hideMenu();
-                const tag = prompt("输入标签名称");
+                const tag = prompt("输入标签名称 (如: 工作)");
                 if (tag) {
                     manualTags.push(tag.trim().replace('#', ''));
-                    editor.commands.deleteRange({ from: editor.state.selection.from - 2, to: editor.state.selection.from });
+                    const { from } = editor.state.selection;
+                    editor.commands.deleteRange({ from: from - 2, to: from });
                 }
             }
         },
         onBlur: () => { setTimeout(hideMenu, 250); }
     });
 
-    menu.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const item = e.target.closest('.menu-item');
-        if (!item) return;
-        const cmd = item.dataset.command;
-        editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
-        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
-        if (cmd === 'bulletList') editor.commands.toggleBulletList();
-        if (cmd === 'tag') {
-            const t = prompt("标签:"); if (t) manualTags.push(t.trim());
-        }
-        if (cmd === 'image') {
-            const url = prompt("图片 URL:"); if (url) editor.commands.setImage({ src: url });
-        }
-        hideMenu(); editor.commands.focus();
-    });
+    // 菜单交互处理
+    if (menu) {
+        menu.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const item = e.target.closest('.menu-item');
+            if (!item) return;
 
-    // --- Data Logic ---
-    async function syncToFirebase(memo) {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        try {
-            const memoRef = ref(database, 'memos');
-            const newPushRef = push(memoRef);
-            await set(newPushRef, memo);
-            console.log("Firebase Sync Success");
-        } catch (err) { console.error("Firebase Sync Error:", err); }
+            const cmd = item.dataset.command;
+            const { from } = editor.state.selection;
+            editor.commands.deleteRange({ from: from - 1, to: from });
+
+            if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
+            if (cmd === 'bulletList') editor.commands.toggleBulletList();
+            if (cmd === 'tag') {
+                const t = prompt("标签:");
+                if (t) manualTags.push(t.trim());
+            }
+            if (cmd === 'image') {
+                const url = prompt("图片 URL:");
+                if (url) editor.commands.setImage({ src: url });
+            }
+            hideMenu();
+            editor.commands.focus();
+        });
     }
 
+    // --- 4. 彻底修复的保存函数 ---
     async function saveMemo() {
-        if (!db) return;
+        if (!db) {
+            alert("正在连接数据库，请稍后...");
+            return;
+        }
+
         const text = editor.getText().trim();
         const html = editor.getHTML();
+        
+        // 验证内容：有文字或有图片即可保存
         if (!text && !html.includes('<img')) return;
 
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const h1 = tempDiv.querySelector('h1');
-        const now = new Date();
-        const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        
-        const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
-        if (h1) h1.remove();
+        try {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // 提取标题逻辑
+            const h1Element = tempDiv.querySelector('h1');
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            
+            const title = h1Element ? h1Element.innerText.trim() : `随笔 ${timeStr}`;
+            if (h1Element) h1Element.remove(); // 将 H1 从正文中剥离
 
-        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
-        const finalTags = [...new Set([...hashTags, ...manualTags])];
-        if (finalTags.length === 0) finalTags.push("随笔");
+            // 提取标签 logic
+            const contentText = tempDiv.innerText;
+            const hashTags = contentText.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
+            const finalTags = [...new Set([...hashTags, ...manualTags])];
+            if (finalTags.length === 0) finalTags.push("随笔");
 
-        const newMemo = {
-            title,
-            content: tempDiv.innerHTML,
-            tags: finalTags,
-            timestamp: Date.now()
-        };
+            const newMemo = {
+                title: title,
+                content: tempDiv.innerHTML,
+                tags: finalTags,
+                timestamp: Date.now()
+            };
 
-        const tx = db.transaction('memos', 'readwrite');
-        tx.objectStore('memos').add(newMemo);
-        tx.oncomplete = () => {
-            editor.commands.clearContent();
-            manualTags = [];
-            renderMemos();
-            syncToFirebase(newMemo);
-            setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
-        };
+            const transaction = db.transaction('memos', 'readwrite');
+            const store = transaction.objectStore('memos');
+            
+            const addRequest = store.add(newMemo);
+            
+            transaction.oncomplete = () => {
+                console.log("Save Success");
+                editor.commands.clearContent();
+                manualTags = [];
+                renderMemos();
+                // 置顶滚动
+                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 150);
+            };
+
+            transaction.onerror = (e) => {
+                console.error("Transaction Error:", e.target.error);
+                alert("存储失败，请尝试刷新页面");
+            };
+
+        } catch (err) {
+            console.error("Save Process Error:", err);
+        }
     }
 
+    // --- 5. 渲染与删除 ---
     window.deleteMemo = (id) => {
+        if (!db) return;
         if (confirm("删除这条记录？")) {
-            db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
+            const tx = db.transaction('memos', 'readwrite').objectStore('memos').delete(id);
+            tx.onsuccess = () => renderMemos();
         }
     };
 
     function renderMemos() {
         const listEl = document.getElementById('memo-list');
         if (!db || !listEl) return;
-        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+
+        const request = db.transaction('memos', 'readonly').objectStore('memos').getAll();
+        request.onsuccess = (e) => {
             const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
+            
+            if (memos.length === 0) {
+                listEl.innerHTML = `<div class="py-20 text-center opacity-20 dark:text-white"><span class="material-symbols-outlined !text-6xl">edit_note</span><p class="mt-2 text-lg">点击下方开始记录灵感</p></div>`;
+                return;
+            }
+
             listEl.innerHTML = memos.map(memo => `
-                <article class="bg-white dark:bg-surface-dark px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm">
+                <article class="bg-white dark:bg-surface-dark px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm overflow-hidden">
                     <div class="flex justify-between items-start mb-1">
                         <h3 class="text-[18px] font-bold text-primary leading-tight pr-4 break-words">${memo.title}</h3>
                         <button onclick="deleteMemo(${memo.id})" class="text-gray-300 dark:text-gray-600 p-1 -mr-2">
@@ -355,18 +357,26 @@
                         ${memo.content}
                     </div>
                     <div class="flex items-center justify-between pt-3 border-t border-black/[0.03] dark:border-white/[0.05]">
-                        <div class="flex gap-1.5 flex-wrap">${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-md">#${tag}</span>`).join('')}</div>
-                        <span class="text-[10px] text-gray-400 font-medium opacity-60">${new Date(memo.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <div class="flex gap-1.5 flex-wrap">
+                            ${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-md">#${tag}</span>`).join('')}
+                        </div>
+                        <span class="text-[10px] text-gray-400 font-medium opacity-60">
+                            ${new Date(memo.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                        </span>
                     </div>
                 </article>
             `).join('');
         };
     }
 
-    document.getElementById('send-btn').addEventListener('click', saveMemo);
-    window.toggleSettings = toggleSettings;
-    window.exportData = exportData;
-    window.clearAllData = clearAllData;
+    // 绑定保存按钮 (确保在 DOM 加载后绑定)
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            saveMemo();
+        });
+    }
 </script>
 </body>
 </html>
