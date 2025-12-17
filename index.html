@@ -5,116 +5,131 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#102216">
-    <title>Echo Memos</title>
+    <title>Echo Memos Pro</title>
     
-    <link rel="manifest" href='data:application/json,{"name":"Echo Memos","short_name":"Echo","start_url":".","display":"standalone","background_color":"#102216","theme_color":"#102216","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/5968/5968292.png","sizes":"512x512","type":"image/png"}]}'>
     <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "media",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#0df259",
-                        "background-dark": "#102216",
-                        "surface-dark": "#1A2E22", 
-                        "surface-darker": "#15261d"
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         :root { color-scheme: light dark; }
-        body { 
-            min-height: 100dvh; 
-            /* 适配 iOS 顶部安全区域 */
-            padding-top: env(safe-area-inset-top); 
-        }
-        
-        /* 针对 iOS PWA 的 Header 特殊处理 */
-        header { padding-top: env(safe-area-inset-top); }
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        body { padding-top: env(safe-area-inset-top); background: #f5f8f6; overflow-x: hidden; }
+        @media (prefers-color-scheme: dark) { body { background: #102216; } }
 
-        .ProseMirror { outline: none !important; min-height: 24px; max-height: 25vh; overflow-y: auto; font-size: 16px; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "写下这一刻的想法..."; color: #666; pointer-events: none; height: 0; float: left; }
-        
-        #mobile-debug-console {
+        /* Slash Menu: 悬浮于编辑器上方 */
+        #slash-menu {
+            position: absolute;
+            z-index: 100;
+            background: rgba(26, 46, 34, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(13, 242, 89, 0.3);
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.4);
             display: none;
-            max-height: 120px;
-            overflow-y: auto;
-            font-family: ui-monospace, monospace;
-            font-size: 11px;
-            background: rgba(0,0,0,0.85);
-            color: #0df259;
-            padding: 10px;
-            margin: 0 16px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(13, 242, 89, 0.2);
-            z-index: 60;
+            width: calc(100% - 32px);
+            max-width: 360px;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 100%;
+            margin-bottom: 12px;
         }
 
-        /* 设置面板滑出动画 */
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .menu-item {
+            padding: 10px 12px;
+            font-size: 14px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-item:active { background: #0df259; color: #102216; }
+
+        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; max-height: 30vh; overflow-y: auto; color: inherit; line-height: 1.5; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #666; pointer-events: none; height: 0; float: left; }
+
+        /* 设置面板动画 */
         #settings-panel {
             transform: translateX(100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         #settings-panel.open { transform: translateX(0); }
+
+        /* 修改卡片及内部元素的比例 */
+article {
+    border-radius: 0.85rem !important; /* 更加精致的圆角 */
+}
+
+/* 优化正文行高，避免由于间距过大导致的空旷感 */
+.prose {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+}
     </style>
 </head>
-<body class="bg-[#f5f8f6] dark:bg-background-dark font-display antialiased transition-colors">
+<body class="font-display antialiased transition-colors">
 
 <header class="fixed top-0 left-0 w-full z-40 bg-[#f5f8f6]/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
     <div class="px-5 pt-4 pb-4 flex items-center justify-between">
-        <button onclick="toggleSettings(true)" class="text-gray-900 dark:text-white p-2 -ml-2 rounded-full active:bg-black/5 dark:active:bg-white/5">
+        <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full active:bg-black/5">
             <span class="material-symbols-outlined !text-[26px]">settings</span>
         </button>
-        <h1 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <span class="text-primary material-symbols-outlined">graphic_eq</span> echo
+        <h1 class="text-lg font-bold dark:text-white flex items-center gap-2">
+            <span class="text-primary material-symbols-outlined !text-[20px]">graphic_eq</span> echo
         </h1>
-        <button class="text-gray-900 dark:text-white p-2 -mr-2"><span class="material-symbols-outlined !text-[26px]">search</span></button>
+        <button class="p-2 -mr-2 text-gray-900 dark:text-white"><span class="material-symbols-outlined !text-[26px]">search</span></button>
     </div>
 </header>
 
-<main id="memo-list" class="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-48 flex flex-col gap-6"></main>
+<main id="memo-list" class="w-full max-w-md mx-auto px-4 pt-20 pb-48 flex flex-col gap-6"></main>
 
 <div id="settings-panel" class="fixed inset-0 z-[100] bg-[#f5f8f6] dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)]">
     <div class="flex items-center justify-between py-6">
         <h2 class="text-2xl font-bold dark:text-white">设置</h2>
-        <button onclick="toggleSettings(false)" class="p-2"><span class="material-symbols-outlined dark:text-white">close</span></button>
+        <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900">
+            <span class="material-symbols-outlined">close</span>
+        </button>
     </div>
     <div class="space-y-4">
         <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl">
-            <p class="text-sm opacity-60 mb-3 uppercase tracking-wider">数据管理</p>
-            <button onclick="exportData()" class="w-full text-left py-3 border-b border-gray-100 dark:border-white/5 flex justify-between">
+            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest">数据管理</p>
+            <button onclick="exportData()" class="w-full text-left py-3 border-b border-black/5 dark:border-white/5 flex justify-between dark:text-white">
                 <span>导出全部记录 (JSON)</span>
                 <span class="material-symbols-outlined text-sm">download</span>
             </button>
-            <button onclick="clearAllData()" class="w-full text-left py-3 text-red-500 flex justify-between">
+            <button onclick="clearAllData()" class="w-full text-left py-3 text-red-500 flex justify-between font-medium">
                 <span>清空本地存储</span>
                 <span class="material-symbols-outlined text-sm">delete</span>
             </button>
         </div>
-        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl flex items-center justify-between">
-            <span>显示调试控制台</span>
-            <input type="checkbox" id="debug-toggle" onchange="toggleDebugUI(this.checked)" class="w-10 h-5 bg-gray-300 rounded-full appearance-none checked:bg-primary transition-all relative">
+        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl flex items-center justify-between dark:text-white">
+            <span class="font-medium">调试模式</span>
+            <input type="checkbox" id="debug-toggle" onchange="toggleDebugUI(this.checked)" class="w-10 h-5 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none checked:bg-primary transition-all relative">
         </div>
     </div>
 </div>
 
-<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 dark:border-white/5 pt-4 pb-[env(safe-area-inset-bottom)] safe-pb shadow-2xl">
-    <div id="mobile-debug-console"></div>
-    <div class="max-w-md mx-auto flex items-end gap-3 px-4 mb-4">
-        <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.8rem] py-3.5 px-5 border border-transparent focus-within:border-primary/40 transition-all">
-            <div id="editor"></div>
+<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 pt-4 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-md mx-auto relative px-4 mb-4">
+        <div id="slash-menu">
+            <div class="menu-grid">
+                <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>大标题</div>
+                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
+                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签/-</div>
+                <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
+            </div>
         </div>
-        <button id="send-btn" class="flex-shrink-0 h-[3.5rem] w-[3.5rem] flex items-center justify-center rounded-full bg-primary text-background-dark active:scale-90 transition-all shadow-lg shadow-primary/20">
-            <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
-        </button>
+        <div class="flex items-end gap-3">
+            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.8rem] py-3.5 px-5 transition-all">
+                <div id="editor"></div>
+            </div>
+            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -122,131 +137,251 @@
     import { Editor } from 'https://esm.sh/@tiptap/core'
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+    import Image from 'https://esm.sh/@tiptap/extension-image'
 
-    // --- 1. Debug Console & Settings Logic ---
+    let db;
+    let manualTags = [];
+
+    // --- 全局函数定义 ---
     window.toggleSettings = (show) => {
         document.getElementById('settings-panel').classList.toggle('open', show);
     };
 
-    const debugEl = document.getElementById('mobile-debug-console');
     window.toggleDebugUI = (checked) => {
-        debugEl.style.display = checked ? 'block' : 'none';
-        localStorage.setItem('echo_debug', checked);
+        localStorage.setItem('echo_debug_mode', checked);
+        const debugBox = document.getElementById('mobile-debug-console');
+        if (debugBox) debugBox.style.display = checked ? 'block' : 'none';
     };
 
-    // 初始化调试设置
-    const savedDebug = localStorage.getItem('echo_debug') === 'true';
-    document.getElementById('debug-toggle').checked = savedDebug;
-    if(savedDebug) debugEl.style.display = 'block';
-
-    const originalLog = console.log;
-    console.log = function(...args) {
-        const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
-        const line = document.createElement('div');
-        line.className = "mb-1 border-b border-white/5 pb-1 opacity-80";
-        line.innerHTML = `<span class="opacity-40 text-[9px]">${new Date().toLocaleTimeString()}</span> ${message}`;
-        debugEl.prepend(line);
-        originalLog.apply(console, args);
+    window.exportData = () => {
+        const tx = db.transaction('memos', 'readonly').objectStore('memos').getAll();
+        tx.onsuccess = (e) => {
+            const data = JSON.stringify(e.target.result, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `echo-export-${Date.now()}.json`;
+            a.click();
+        };
     };
 
-    // --- 2. Database & PWA ---
-    let db;
-    const request = indexedDB.open('EchoPWA_V4', 1);
+    window.clearAllData = () => {
+        if (confirm("确定要永久删除所有记录吗？")) {
+            db.transaction('memos', 'readwrite').objectStore('memos').clear().onsuccess = () => {
+                renderMemos();
+                toggleSettings(false);
+            };
+        }
+    };
+
+    // --- 数据库初始化 (使用新版本名避免冲突) ---
+    const request = indexedDB.open('EchoPWA_V8', 1);
     request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains('memos')) {
+            database.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+        }
     };
-    request.onsuccess = (e) => {
-        db = e.target.result;
-        renderMemos();
-    };
+    request.onsuccess = (e) => { db = e.target.result; renderMemos(); };
+
+    // --- Tiptap 逻辑 ---
+    const menu = document.getElementById('slash-menu');
+    const hideMenu = () => { menu.style.display = 'none'; };
+    const showMenu = () => { menu.style.display = 'block'; };
 
     const editor = new Editor({
         element: document.querySelector('#editor'),
         extensions: [
             StarterKit,
-            Placeholder.configure({ placeholder: '在此记录想法...' })
+            Image,
+            Placeholder.configure({ placeholder: '记录这一刻的想法...' })
         ],
-        content: '',
+        onUpdate: ({ editor }) => {
+            const text = editor.getText();
+            // 逻辑：只有当最后一个字符是 / 时才显示菜单
+            if (!text.includes('/')) hideMenu();
+            if (text.endsWith('/')) showMenu();
+            
+            // /- 指令逻辑优化
+            if (text.endsWith('/-')) {
+                hideMenu();
+                const tag = prompt("添加标签名称");
+                if (tag) {
+                    const cleanTag = tag.trim().replace('#', '');
+                    manualTags.push(cleanTag);
+                    const { from } = editor.state.selection;
+                    editor.commands.deleteRange({ from: from - 2, to: from });
+                }
+            }
+        },
+        onBlur: () => { setTimeout(hideMenu, 250); }
     });
 
+    menu.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const item = e.target.closest('.menu-item');
+        if (!item) return;
+
+        const cmd = item.dataset.command;
+        const { from } = editor.state.selection;
+        
+        // 删除已经输入的 "/"
+        editor.commands.deleteRange({ from: from - 1, to: from });
+
+        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
+        if (cmd === 'bulletList') editor.commands.toggleBulletList();
+        if (cmd === 'tag') {
+            const t = prompt("输入标签:");
+            if (t) manualTags.push(t.trim());
+        }
+        if (cmd === 'image') {
+            const url = prompt("输入图片 URL:");
+            if (url) editor.commands.setImage({ src: url });
+        }
+        hideMenu();
+        editor.commands.focus();
+    });
+
+    // --- 修复后的保存逻辑 ---
     async function saveMemo() {
-        const html = editor.getHTML();
+        if (!editor) return;
+        
         const text = editor.getText().trim();
-        if (!text) return;
+        const html = editor.getHTML();
+        
+        // 允许只有图片的情况保存
+        if (!text && !html.includes('<img')) return;
 
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const h1 = tempDiv.querySelector('h1');
-        const title = h1 ? h1.innerText : "";
-        if (h1) h1.remove();
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = html;
+        
+        // 1. 提取第一个 H1 作为标题
+        const h1Element = tempContainer.querySelector('h1');
+        const d = new Date();
+        const defaultTitle = `随笔 ${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        
+        const title = h1Element ? h1Element.innerText.trim() : defaultTitle;
+        if (h1Element) h1Element.remove(); // 从正文中移除标题部分
 
-        const memo = {
-            title,
-            content: tempDiv.innerHTML,
-            tags: text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [],
+        // 2. 标签处理：从正文匹配 #标签 并合并 /- 手动输入的标签
+        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
+        let finalTags = [...new Set([...hashTags, ...manualTags])];
+        if (finalTags.length === 0) finalTags.push("随笔");
+
+        // 3. 构建对象并存入数据库
+        const memoEntry = {
+            title: title || defaultTitle,
+            content: tempContainer.innerHTML,
+            tags: finalTags,
             timestamp: Date.now()
         };
 
-        const tx = db.transaction('memos', 'readwrite');
-        tx.objectStore('memos').add(memo);
-        tx.oncomplete = () => {
-            console.log("New Memo Added");
+        const transaction = db.transaction('memos', 'readwrite');
+        const store = transaction.objectStore('memos');
+        
+        const addRequest = store.add(memoEntry);
+        
+        addRequest.onsuccess = () => {
             editor.commands.clearContent();
-            renderMemos(true); // 传入 true 表示需要滚动到顶部
+            manualTags = []; // 必须清空
+            renderMemos();
+            // 确保渲染后滚动
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 100);
+        };
+
+        addRequest.onerror = (err) => {
+            console.error("Save failed:", err);
+            alert("保存失败，请检查数据库状态");
         };
     }
 
+    // --- 渲染逻辑 ---
     window.deleteMemo = (id) => {
-        const tx = db.transaction('memos', 'readwrite').objectStore('memos').delete(id);
-        tx.onsuccess = () => renderMemos();
-    };
-
-    window.clearAllData = () => {
-        if(confirm("确定清空所有记录吗？此操作不可撤销。")) {
-            const tx = db.transaction('memos', 'readwrite').objectStore('memos').clear();
-            tx.onsuccess = () => { renderMemos(); toggleSettings(false); };
+        if (confirm("确定删除这条备忘吗？")) {
+            const tx = db.transaction('memos', 'readwrite').objectStore('memos').delete(id);
+            tx.onsuccess = renderMemos;
         }
     };
 
-    window.exportData = () => {
-        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
-            const blob = new Blob([JSON.stringify(e.target.result, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `echo-memos-export-${Date.now()}.json`;
-            a.click();
-        };
-    };
+    /*
+    function renderMemos() {
+        const listEl = document.getElementById('memo-list');
+        if (!db) return;
 
-    function renderMemos(shouldScrollToTop = false) {
-        const container = document.getElementById('memo-list');
         db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
             const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
-            container.innerHTML = memos.map(memo => `
-                <article class="bg-white dark:bg-surface-dark rounded-[2.2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/5 dark:border-white/5">
-                    <div class="flex justify-between items-start mb-3">
-                        <h3 class="text-[20px] font-bold text-primary leading-tight">${memo.title || '碎片记录'}</h3>
-                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 p-1"><span class="material-symbols-outlined !text-[20px]">close</span></button>
+            
+            if (memos.length === 0) {
+                listEl.innerHTML = `<div class="py-20 text-center opacity-20"><span class="material-symbols-outlined !text-6xl">edit_note</span><p class="mt-2 text-lg">开始记录你的第一条思维回响</p></div>`;
+                return;
+            }
+
+            listEl.innerHTML = memos.map(memo => `
+                <article class="bg-white dark:bg-surface-dark rounded-[0.8rem] p-6 border border-black/5 dark:border-white/5 shadow-sm transition-all active:scale-[0.99]">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-[20px] font-bold text-primary leading-tight pr-4">${memo.title}</h3>
+                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 hover:text-red-400 p-1">
+                            <span class="material-symbols-outlined !text-[20px]">close</span>
+                        </button>
                     </div>
-                    <div class="prose prose-sm dark:prose-invert max-w-none text-[17px] leading-[1.6] text-gray-800 dark:text-gray-200 mb-5">
+                    <div class="prose dark:prose-invert text-[17px] leading-[1.6] mb-5 text-gray-800 dark:text-gray-100">
                         ${memo.content}
                     </div>
                     <div class="flex items-center justify-between pt-4 border-t border-black/[0.03] dark:border-white/[0.03]">
-                        <div class="flex gap-2 flex-wrap">${memo.tags.map(tag => `<span class="text-primary text-[12px] font-bold bg-primary/10 px-2.5 py-1 rounded-lg">#${tag}</span>`).join('')}</div>
-                        <span class="text-[11px] text-gray-400 font-medium">${new Date(memo.timestamp).toLocaleDateString()}</span>
+                        <div class="flex gap-2 flex-wrap">
+                            ${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2.5 py-1 rounded-lg">#${tag}</span>`).join('')}
+                        </div>
+                        <span class="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">
+                            ${new Date(memo.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </span>
                     </div>
                 </article>
             `).join('');
-
-            // 如果是新创建，滚动到最顶部
-            if (shouldScrollToTop) {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
         };
     }
+    */
+    function renderMemos() {
+    const listEl = document.getElementById('memo-list');
+    if (!db) return;
 
+    db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+        const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
+        
+        if (memos.length === 0) {
+            listEl.innerHTML = `<div class="py-20 text-center opacity-20"><span class="material-symbols-outlined !text-6xl">edit_note</span><p class="mt-2 text-lg">开始记录你的第一条思维回响</p></div>`;
+            return;
+        }
+
+        listEl.innerHTML = memos.map(memo => `
+            <article class="bg-white dark:bg-surface-dark rounded-[1.25rem] px-5 pt-3 pb-2 border border-black/[0.05] dark:border-white/[0.05] shadow-sm transition-all active:scale-[0.98]">
+                <div class="flex justify-between items-start mb-1">
+                    <h3 class="text-[18px] font-bold text-primary leading-snug pr-4">${memo.title}</h3>
+                    <button onclick="deleteMemo(${memo.id})" class="text-gray-300 hover:text-red-400 p-1 -mr-2 -mt-1">
+                        <span class="material-symbols-outlined !text-[20px]">close</span>
+                    </button>
+                </div>
+                
+                <div class="prose dark:prose-invert text-[16px] leading-[1.5] text-gray-800 dark:text-gray-100 mb-3">
+                    ${memo.content}
+                </div>
+                
+                <div class="flex items-center justify-between pt-3 border-t border-black/[0.03] dark:border-white/[0.03]">
+                    <div class="flex gap-1.5 flex-wrap">
+                        ${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-md">#${tag}</span>`).join('')}
+                    </div>
+                    <span class="text-[10px] text-gray-400 font-medium opacity-70">
+                        ${new Date(memo.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                </div>
+            </article>
+        `).join('');
+    };
+}
+
+    // 绑定保存按钮
     document.getElementById('send-btn').addEventListener('click', saveMemo);
 </script>
 </body>
