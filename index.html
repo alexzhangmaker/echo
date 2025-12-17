@@ -4,14 +4,15 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#102216">
-    <title>Echo Memos PWA</title>
+    <title>Echo Memos</title>
     
     <link rel="manifest" href='data:application/json,{"name":"Echo Memos","short_name":"Echo","start_url":".","display":"standalone","background_color":"#102216","theme_color":"#102216","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/5968/5968292.png","sizes":"512x512","type":"image/png"}]}'>
-
     <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "media",
@@ -19,7 +20,6 @@
                 extend: {
                     colors: {
                         "primary": "#0df259",
-                        "background-light": "#f5f8f6",
                         "background-dark": "#102216",
                         "surface-dark": "#1A2E22", 
                         "surface-darker": "#15261d"
@@ -30,50 +30,90 @@
     </script>
     <style>
         :root { color-scheme: light dark; }
-        .ProseMirror { outline: none !important; min-height: 24px; max-height: 200px; overflow-y: auto; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "记录灵感..."; color: #666; pointer-events: none; height: 0; float: left; }
+        body { 
+            min-height: 100dvh; 
+            /* 适配 iOS 顶部安全区域 */
+            padding-top: env(safe-area-inset-top); 
+        }
         
-        /* 调试控制台样式 */
+        /* 针对 iOS PWA 的 Header 特殊处理 */
+        header { padding-top: env(safe-area-inset-top); }
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+
+        .ProseMirror { outline: none !important; min-height: 24px; max-height: 25vh; overflow-y: auto; font-size: 16px; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "写下这一刻的想法..."; color: #666; pointer-events: none; height: 0; float: left; }
+        
         #mobile-debug-console {
             display: none;
-            max-height: 150px;
+            max-height: 120px;
             overflow-y: auto;
-            font-family: monospace;
-            font-size: 10px;
-            background: rgba(0,0,0,0.8);
+            font-family: ui-monospace, monospace;
+            font-size: 11px;
+            background: rgba(0,0,0,0.85);
             color: #0df259;
-            padding: 8px;
+            padding: 10px;
             margin: 0 16px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(13, 242, 89, 0.3);
-            white-space: pre-wrap;
-            z-index: 100;
+            border-radius: 12px;
+            border: 1px solid rgba(13, 242, 89, 0.2);
+            z-index: 60;
         }
+
+        /* 设置面板滑出动画 */
+        #settings-panel {
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #settings-panel.open { transform: translateX(0); }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display antialiased pb-48 transition-colors">
+<body class="bg-[#f5f8f6] dark:bg-background-dark font-display antialiased transition-colors">
 
-<header class="fixed top-0 left-0 w-full z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-black/5 dark:border-white/5">
-    <div class="px-5 pt-12 pb-4 flex items-center justify-between">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+<header class="fixed top-0 left-0 w-full z-40 bg-[#f5f8f6]/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+    <div class="px-5 pt-4 pb-4 flex items-center justify-between">
+        <button onclick="toggleSettings(true)" class="text-gray-900 dark:text-white p-2 -ml-2 rounded-full active:bg-black/5 dark:active:bg-white/5">
+            <span class="material-symbols-outlined !text-[26px]">settings</span>
+        </button>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <span class="text-primary material-symbols-outlined">graphic_eq</span> echo
         </h1>
-        <span id="pwa-status" class="text-[10px] text-primary opacity-50">Local Mode</span>
-        <button class="text-gray-900 dark:text-white p-2"><span class="material-symbols-outlined">search</span></button>
+        <button class="text-gray-900 dark:text-white p-2 -mr-2"><span class="material-symbols-outlined !text-[26px]">search</span></button>
     </div>
 </header>
 
-<main id="memo-list" class="flex-1 w-full max-w-md mx-auto px-4 pt-32 pb-8 flex flex-col gap-5"></main>
+<main id="memo-list" class="flex-1 w-full max-w-md mx-auto px-4 pt-20 pb-48 flex flex-col gap-6"></main>
 
-<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-xl border-t border-white/5 pt-4 pb-8 shadow-2xl">
+<div id="settings-panel" class="fixed inset-0 z-[100] bg-[#f5f8f6] dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)]">
+    <div class="flex items-center justify-between py-6">
+        <h2 class="text-2xl font-bold dark:text-white">设置</h2>
+        <button onclick="toggleSettings(false)" class="p-2"><span class="material-symbols-outlined dark:text-white">close</span></button>
+    </div>
+    <div class="space-y-4">
+        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl">
+            <p class="text-sm opacity-60 mb-3 uppercase tracking-wider">数据管理</p>
+            <button onclick="exportData()" class="w-full text-left py-3 border-b border-gray-100 dark:border-white/5 flex justify-between">
+                <span>导出全部记录 (JSON)</span>
+                <span class="material-symbols-outlined text-sm">download</span>
+            </button>
+            <button onclick="clearAllData()" class="w-full text-left py-3 text-red-500 flex justify-between">
+                <span>清空本地存储</span>
+                <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+        </div>
+        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl flex items-center justify-between">
+            <span>显示调试控制台</span>
+            <input type="checkbox" id="debug-toggle" onchange="toggleDebugUI(this.checked)" class="w-10 h-5 bg-gray-300 rounded-full appearance-none checked:bg-primary transition-all relative">
+        </div>
+    </div>
+</div>
+
+<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 dark:border-white/5 pt-4 pb-[env(safe-area-inset-bottom)] safe-pb shadow-2xl">
     <div id="mobile-debug-console"></div>
-    
-    <div class="max-w-md mx-auto flex items-end gap-3 px-4">
-        <div class="flex-1 bg-gray-50 dark:bg-surface-darker rounded-[1.5rem] py-3 px-5 border border-transparent focus-within:border-primary/30 transition-all">
+    <div class="max-w-md mx-auto flex items-end gap-3 px-4 mb-4">
+        <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.8rem] py-3.5 px-5 border border-transparent focus-within:border-primary/40 transition-all">
             <div id="editor"></div>
         </div>
-        <button id="send-btn" class="flex-shrink-0 h-[3.4rem] w-[3.4rem] flex items-center justify-center rounded-full bg-primary text-background-dark active:scale-90 transition-all">
-            <span class="material-symbols-outlined font-bold">arrow_upward</span>
+        <button id="send-btn" class="flex-shrink-0 h-[3.5rem] w-[3.5rem] flex items-center justify-center rounded-full bg-primary text-background-dark active:scale-90 transition-all shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
         </button>
     </div>
 </div>
@@ -83,61 +123,38 @@
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
 
-    // --- 1. 移动端控制台实现 ---
+    // --- 1. Debug Console & Settings Logic ---
+    window.toggleSettings = (show) => {
+        document.getElementById('settings-panel').classList.toggle('open', show);
+    };
+
     const debugEl = document.getElementById('mobile-debug-console');
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+    window.toggleDebugUI = (checked) => {
+        debugEl.style.display = checked ? 'block' : 'none';
+        localStorage.setItem('echo_debug', checked);
+    };
 
-    if (isMobile) {
-        debugEl.style.display = 'block';
-        const originalLog = console.log;
-        console.log = function(...args) {
-            const time = new Date().toLocaleTimeString();
-            const message = args.map(arg => 
-                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
-            ).join(' ');
-            
-            const line = document.createElement('div');
-            line.className = "mb-1 border-b border-white/5 pb-1";
-            line.innerHTML = `<span class="opacity-50">[${time}]</span> ${message}`;
-            debugEl.prepend(line); // 新消息在最前
-            originalLog.apply(console, args);
-        };
-    }
+    // 初始化调试设置
+    const savedDebug = localStorage.getItem('echo_debug') === 'true';
+    document.getElementById('debug-toggle').checked = savedDebug;
+    if(savedDebug) debugEl.style.display = 'block';
 
-    console.log("System Initialized. Mobile Detected:", isMobile);
+    const originalLog = console.log;
+    console.log = function(...args) {
+        const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+        const line = document.createElement('div');
+        line.className = "mb-1 border-b border-white/5 pb-1 opacity-80";
+        line.innerHTML = `<span class="opacity-40 text-[9px]">${new Date().toLocaleTimeString()}</span> ${message}`;
+        debugEl.prepend(line);
+        originalLog.apply(console, args);
+    };
 
-    // --- 2. PWA Service Worker 注册 (调试模式) ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            const swCode = `
-                self.addEventListener('install', () => self.skipWaiting());
-                self.addEventListener('activate', (event) => {
-                    event.waitUntil(clients.claim());
-                    console.log('SW Activated - No Caching Mode');
-                });
-                self.addEventListener('fetch', (event) => {
-                    // 调试模式：直接透传，不进行缓存
-                    event.respondWith(fetch(event.request));
-                });
-            `;
-            const blob = new Blob([swCode], { type: 'text/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            
-            navigator.serviceWorker.register(swUrl).then(reg => {
-                console.log("PWA SW Registered successfully");
-                document.getElementById('pwa-status').innerText = 'PWA READY';
-            }).catch(err => console.log("SW Register Error:", err));
-        });
-    }
-
-    // --- 3. 数据库与编辑器逻辑 ---
+    // --- 2. Database & PWA ---
     let db;
-    const request = indexedDB.open('EchoPWA_DB', 2);
+    const request = indexedDB.open('EchoPWA_V4', 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
-        if (!db.objectStoreNames.contains('memos')) {
-            db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-        }
+        db.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
     };
     request.onsuccess = (e) => {
         db = e.target.result;
@@ -148,10 +165,9 @@
         element: document.querySelector('#editor'),
         extensions: [
             StarterKit,
-            Placeholder.configure({ placeholder: '在此输入内容...' })
+            Placeholder.configure({ placeholder: '在此记录想法...' })
         ],
         content: '',
-        onUpdate: () => window.scrollTo(0, document.body.scrollHeight)
     });
 
     async function saveMemo() {
@@ -175,41 +191,59 @@
         const tx = db.transaction('memos', 'readwrite');
         tx.objectStore('memos').add(memo);
         tx.oncomplete = () => {
-            console.log("Memo Saved:", { title: memo.title, tagCount: memo.tags.length });
+            console.log("New Memo Added");
             editor.commands.clearContent();
-            renderMemos();
+            renderMemos(true); // 传入 true 表示需要滚动到顶部
         };
     }
 
     window.deleteMemo = (id) => {
-        const tx = db.transaction('memos', 'readwrite');
-        tx.objectStore('memos').delete(id);
-        tx.oncomplete = () => {
-            console.log("Deleted Memo ID:", id);
-            renderMemos();
+        const tx = db.transaction('memos', 'readwrite').objectStore('memos').delete(id);
+        tx.onsuccess = () => renderMemos();
+    };
+
+    window.clearAllData = () => {
+        if(confirm("确定清空所有记录吗？此操作不可撤销。")) {
+            const tx = db.transaction('memos', 'readwrite').objectStore('memos').clear();
+            tx.onsuccess = () => { renderMemos(); toggleSettings(false); };
+        }
+    };
+
+    window.exportData = () => {
+        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+            const blob = new Blob([JSON.stringify(e.target.result, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `echo-memos-export-${Date.now()}.json`;
+            a.click();
         };
     };
 
-    function renderMemos() {
+    function renderMemos(shouldScrollToTop = false) {
         const container = document.getElementById('memo-list');
-        const tx = db.transaction('memos', 'readonly');
-        tx.objectStore('memos').getAll().onsuccess = (e) => {
+        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
             const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
             container.innerHTML = memos.map(memo => `
-                <article class="bg-white dark:bg-surface-dark rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-white/5">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="text-lg font-bold text-primary">${memo.title || 'Untitled'}</h3>
-                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 hover:text-red-400 p-1">
-                            <span class="material-symbols-outlined !text-[18px]">close</span>
-                        </button>
+                <article class="bg-white dark:bg-surface-dark rounded-[2.2rem] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-black/5 dark:border-white/5">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="text-[20px] font-bold text-primary leading-tight">${memo.title || '碎片记录'}</h3>
+                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 p-1"><span class="material-symbols-outlined !text-[20px]">close</span></button>
                     </div>
-                    <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mb-4">${memo.content}</div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex gap-2">${memo.tags.map(tag => `<span class="text-primary text-[10px] font-bold bg-primary/10 px-2 py-1 rounded-full">#${tag}</span>`).join('')}</div>
-                        <span class="text-[10px] text-gray-400 opacity-50 uppercase">${new Date(memo.timestamp).toLocaleTimeString()}</span>
+                    <div class="prose prose-sm dark:prose-invert max-w-none text-[17px] leading-[1.6] text-gray-800 dark:text-gray-200 mb-5">
+                        ${memo.content}
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-black/[0.03] dark:border-white/[0.03]">
+                        <div class="flex gap-2 flex-wrap">${memo.tags.map(tag => `<span class="text-primary text-[12px] font-bold bg-primary/10 px-2.5 py-1 rounded-lg">#${tag}</span>`).join('')}</div>
+                        <span class="text-[11px] text-gray-400 font-medium">${new Date(memo.timestamp).toLocaleDateString()}</span>
                     </div>
                 </article>
             `).join('');
+
+            // 如果是新创建，滚动到最顶部
+            if (shouldScrollToTop) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         };
     }
 
