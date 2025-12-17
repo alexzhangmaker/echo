@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <title>Echo Memos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "media",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df259",
+                        "background-light": "#f5f8f6",
+                        "background-dark": "#102216",
+                        "surface-dark": "#1A2E22", 
+                        "surface-darker": "#15261d"
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "PingFang SC", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "2xl": "4rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+    <style>
+        :root { color-scheme: light dark; }
+        body { min-height: 100dvh; }
+        
+        /* Tiptap 编辑器基础样式 */
+        .ProseMirror {
+            outline: none !important;
+            min-height: 24px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .ProseMirror p.is-editor-empty:first-child::before {
+            content: "记录灵感... 试试 # 标题";
+            color: #adb5bd;
+            float: left;
+            height: 0;
+            pointer-events: none;
+        }
+        /* Markdown 标题样式 */
+        .ProseMirror h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; color: #0df259; }
+        .ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; }
+        
+        /* 编辑器容器样式 */
+        .editor-container {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased min-h-screen relative flex flex-col pb-40 transition-colors">
+
+<header class="fixed top-0 left-0 w-full z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-black/5 dark:border-white/5">
+    <div class="px-5 pt-12 pb-4 flex items-center justify-between">
+        <button class="text-gray-900 dark:text-white p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"><span class="material-symbols-outlined !text-[28px]">menu</span></button>
+        <h1 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+            <span class="text-primary material-symbols-outlined !text-[24px]">graphic_eq</span>
+            echo,<span class="font-normal opacity-80 text-sm">思维的回响</span>
+        </h1>
+        <button class="text-gray-900 dark:text-white p-2 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"><span class="material-symbols-outlined !text-[28px]">search</span></button>
+    </div>
+</header>
+
+<main id="memo-list" class="flex-1 w-full max-w-md mx-auto px-4 pt-32 pb-8 flex flex-col gap-5">
+    </main>
+
+<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-xl border-t border-gray-100 dark:border-white/5 px-4 pt-4 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.15)]">
+    <div class="max-w-md mx-auto flex items-end gap-3">
+        <div class="editor-container flex-1 bg-gray-50 dark:bg-surface-darker rounded-[1.8rem] py-3 px-5 border border-transparent focus-within:border-primary/30">
+            <div id="editor"></div>
+        </div>
+        <button id="send-btn" class="flex-shrink-0 h-[3.4rem] w-[3.4rem] flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90 transition-all">
+            <span class="material-symbols-outlined !text-[28px] font-bold">arrow_upward</span>
+        </button>
+    </div>
+</div>
+
+<script type="module">
+    import { Editor } from 'https://esm.sh/@tiptap/core'
+    import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+    import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+
+    let db;
+    const request = indexedDB.open('EchoMemosV3', 1);
+    request.onupgradeneeded = (e) => {
+        e.target.result.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+    };
+    request.onsuccess = (e) => {
+        db = e.target.result;
+        renderMemos();
+    };
+
+    // 初始化 Tiptap 编辑器
+    const editor = new Editor({
+        element: document.querySelector('#editor'),
+        extensions: [
+            StarterKit,
+            Placeholder.configure({
+                placeholder: '记录灵感... 输入 # 创建标题',
+            }),
+        ],
+        content: '',
+        onUpdate: ({ editor }) => {
+            // 可以在这里处理自动滚动
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    })
+
+    async function saveMemo() {
+        const html = editor.getHTML();
+        const text = editor.getText().trim();
+        if (!text) return;
+
+        // 提取第一个 H1 作为标题
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const h1 = tempDiv.querySelector('h1');
+        const title = h1 ? h1.innerText : "";
+        
+        // 如果有标题，在正文中移除它以避免重复显示
+        if (h1) h1.remove();
+        const bodyContent = tempDiv.innerHTML;
+
+        // 解析标签
+        const tags = text.match(/#[\w\u4e00-\u9fa5]+/g) || [];
+
+        const memo = {
+            title: title,
+            content: bodyContent,
+            tags: tags.map(t => t.replace('#', '')),
+            timestamp: Date.now()
+        };
+
+        const tx = db.transaction('memos', 'readwrite');
+        tx.objectStore('memos').add(memo);
+        tx.oncomplete = () => {
+            editor.commands.clearContent();
+            renderMemos();
+        };
+    }
+
+    window.deleteMemo = (id) => {
+        const tx = db.transaction('memos', 'readwrite');
+        tx.objectStore('memos').delete(id);
+        tx.oncomplete = renderMemos;
+    };
+
+    function renderMemos() {
+        const container = document.getElementById('memo-list');
+        const tx = db.transaction('memos', 'readonly');
+        const request = tx.objectStore('memos').getAll();
+
+        request.onsuccess = () => {
+            const memos = request.result.sort((a, b) => b.timestamp - a.timestamp);
+            container.innerHTML = memos.map(memo => `
+                <article class="bg-white dark:bg-surface-dark rounded-[2rem] p-6 shadow-sm border border-gray-100 dark:border-white/5">
+                    <div class="flex justify-between items-start mb-3">
+                        ${memo.title ? `<h3 class="text-lg font-bold text-primary leading-tight">${memo.title}</h3>` : '<span></span>'}
+                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 hover:text-red-400 p-1"><span class="material-symbols-outlined !text-[18px]">close</span></button>
+                    </div>
+                    
+                    <div class="prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 mb-4">
+                        ${memo.content}
+                    </div>
+
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex gap-2">
+                            ${memo.tags.map(tag => `<span class="text-primary text-[10px] font-bold bg-primary/10 px-2 py-0.5 rounded-full">#${tag}</span>`).join('')}
+                        </div>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-tighter">${new Date(memo.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                </article>
+            `).join('');
+        };
+    }
+
+    document.getElementById('send-btn').addEventListener('click', saveMemo);
+</script>
+</body>
+</html>
