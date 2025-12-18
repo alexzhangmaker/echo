@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Echo Memos Pro - v15</title>
+    <title>Echo Memos Pro - v15.1</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -34,6 +34,7 @@
         :root { color-scheme: light dark; }
         body { padding-top: env(safe-area-inset-top); background-color: #f5f8f6; }
         @media (prefers-color-scheme: dark) { body { background-color: #0a140d; } }
+        
         #splash-screen {
             position: fixed; inset: 0; z-index: 9999;
             background: #f5f8f6; display: flex; flex-direction: column;
@@ -41,10 +42,26 @@
             transition: opacity 0.5s ease, visibility 0.5s;
         }
         @media (prefers-color-scheme: dark) { #splash-screen { background: #0a140d; } }
+        
         #settings-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #settings-panel.open { transform: translateX(0); }
+
+        /* Slash Menu Style */
+        #slash-menu {
+            position: absolute; z-index: 100; background: rgba(22, 38, 27, 0.98);
+            backdrop-filter: blur(15px); border: 1px solid rgba(13, 242, 89, 0.3);
+            border-radius: 16px; padding: 6px; box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.4);
+            display: none; width: calc(100% - 32px); max-width: 360px;
+            left: 50%; transform: translateX(-50%); bottom: 100%; margin-bottom: 12px;
+        }
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .menu-item { padding: 10px 12px; font-size: 14px; color: white; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .menu-item:active { background: #0df259; color: #102216; }
+
         .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; color: inherit; line-height: 1.5; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; height: 0; }
+        
+        article { border-radius: 1.25rem !important; }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display antialiased">
@@ -87,12 +104,21 @@
 </div>
 
 <div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 pt-4 pb-[env(safe-area-inset-bottom)]">
-    <div class="max-w-md mx-auto px-4 mb-4">
+    <div class="max-w-md mx-auto relative px-4 mb-4">
+        <div id="slash-menu">
+            <div class="menu-grid">
+                <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>大标题</div>
+                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
+                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签/-</div>
+                <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
+            </div>
+        </div>
+
         <div class="flex items-end gap-3">
-            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5">
+            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5 transition-all">
                 <div id="editor"></div>
             </div>
-            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg">
+            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg active:scale-95 transition-all">
                 <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
             </button>
         </div>
@@ -121,8 +147,9 @@
     const database = getDatabase(app);
     const provider = new GoogleAuthProvider();
     let db, currentUser = null;
+    let manualTags = [];
 
-    // --- 1. 核心：带查重功能的同步监听 ---
+    // --- 1. 同步监听逻辑 ---
     function startSmartSync() {
         if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
         const memosRef = ref(database, 'memos');
@@ -130,30 +157,20 @@
         onChildAdded(memosRef, (snapshot) => {
             const firebaseKey = snapshot.key;
             const cloudMemo = snapshot.val();
-            
             const tx = db.transaction('memos', 'readwrite');
             const store = tx.objectStore('memos');
             const index = store.index('firebaseKey');
             
-            // 查重逻辑
             index.get(firebaseKey).onsuccess = (e) => {
                 const existing = e.target.result;
-                const memoToStore = { 
-                    ...cloudMemo, 
-                    firebaseKey: firebaseKey, 
-                    synced: true 
-                };
-                
+                const memoToStore = { ...cloudMemo, firebaseKey: firebaseKey, synced: true };
                 if (existing) {
-                    // 如果本地已存在（通过 firebaseKey 找到），更新它
                     memoToStore.id = existing.id;
                     store.put(memoToStore);
                 } else {
-                    // 如果是真正的云端新数据，插入它
                     store.add(memoToStore);
                 }
             };
-
             tx.oncomplete = () => {
                 document.getElementById('sync-status').innerText = "Live";
                 renderMemos();
@@ -161,7 +178,7 @@
         });
     }
 
-    // --- 2. Auth & Login ---
+    // --- 2. Auth Logic ---
     onAuthStateChanged(auth, (user) => {
         const splash = document.getElementById('splash-screen');
         if (user && user.email.endsWith('@gmail.com')) {
@@ -177,8 +194,6 @@
     });
 
     window.loginGoogle = () => signInWithPopup(auth, provider);
-    
-    // 退出时清空 IndexedDB，防止下次登录冲突
     window.logout = async () => {
         if (db) {
             const tx = db.transaction('memos', 'readwrite');
@@ -197,13 +212,12 @@
             </div>`;
     }
 
-    // --- 3. IndexedDB 设置 firebaseKey 为索引 ---
+    // --- 3. IndexedDB Initialization ---
     const initDB = () => {
         const request = indexedDB.open('EchoPWA_V15', 1);
         request.onupgradeneeded = (e) => {
             const d = e.target.result;
             const store = d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-            // 创建 firebaseKey 索引以便查重
             store.createIndex('firebaseKey', 'firebaseKey', { unique: true });
         };
         request.onsuccess = (e) => { 
@@ -214,21 +228,86 @@
     };
     initDB();
 
-    // --- 4. Editor & Actions ---
+    // --- 4. Tiptap Editor & Slash Menu Logic ---
+    const slashMenu = document.getElementById('slash-menu');
+    const hideMenu = () => { slashMenu.style.display = 'none'; };
+    const showMenu = () => { slashMenu.style.display = 'block'; };
+
     const editor = new Editor({
         element: document.querySelector('#editor'),
-        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '记录想法...' })],
+        extensions: [
+            StarterKit, 
+            Image, 
+            Placeholder.configure({ placeholder: '记录想法...' })
+        ],
+        onUpdate: ({ editor }) => {
+            const content = editor.getText();
+            // 逻辑 1: 如果删除了 /，立即隐藏菜单
+            if (!content.includes('/')) hideMenu();
+            // 逻辑 2: 唤起菜单
+            if (content.endsWith('/')) showMenu();
+            // 逻辑 3: /- 快捷标签指令
+            if (content.endsWith('/-')) {
+                hideMenu();
+                const tagValue = prompt("输入标签名称");
+                if (tagValue) {
+                    manualTags.push(tagValue.trim());
+                    const { from } = editor.state.selection;
+                    editor.commands.deleteRange({ from: from - 2, to: from });
+                }
+            }
+        },
+        onBlur: () => { setTimeout(hideMenu, 250); }
     });
 
+    // 处理 Slash Menu 点击
+    slashMenu.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // 关键：防止失去焦点
+        const item = e.target.closest('.menu-item');
+        if (!item) return;
+
+        const cmd = item.dataset.command;
+        const { from } = editor.state.selection;
+        // 删除刚输入的 "/"
+        editor.commands.deleteRange({ from: from - 1, to: from });
+
+        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
+        if (cmd === 'bulletList') editor.commands.toggleBulletList();
+        if (cmd === 'tag') {
+            const t = prompt("标签名:");
+            if(t) manualTags.push(t.trim());
+        }
+        if (cmd === 'image') {
+            const url = prompt("图片 URL:");
+            if(url) editor.commands.setImage({ src: url });
+        }
+        hideMenu();
+        editor.commands.focus();
+    });
+
+    // --- 5. Data Actions ---
     async function saveMemo() {
         const text = editor.getText().trim();
         const html = editor.getHTML();
         if (!text && !html.includes('<img')) return;
 
-        // 本地临时对象 (无 firebaseKey)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const h1 = tempDiv.querySelector('h1');
+        
+        const d = new Date();
+        const timeStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
+        if (h1) h1.remove();
+
+        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
+        const finalTags = [...new Set([...hashTags, ...manualTags])];
+        if (finalTags.length === 0) finalTags.push("随笔");
+
         const memo = {
-            title: text.split('\n')[0].substring(0,25) || '随笔',
-            content: html,
+            title: title,
+            content: tempDiv.innerHTML,
+            tags: finalTags,
             timestamp: Date.now(),
             synced: false,
             firebaseKey: null 
@@ -239,6 +318,7 @@
         req.onsuccess = (e) => {
             memo.id = e.target.result;
             editor.commands.clearContent();
+            manualTags = [];
             renderMemos();
             trySyncToFirebase(memo);
         };
@@ -250,11 +330,8 @@
             const memoRef = ref(database, 'memos');
             const newRef = push(memoRef);
             const firebaseKey = newRef.key;
-            
-            // 上传时包含这个 key
             await set(newRef, { ...memo, synced: true, firebaseKey: firebaseKey });
             
-            // 更新本地 ID 为带 key 的状态
             const tx = db.transaction('memos', 'readwrite');
             memo.synced = true;
             memo.firebaseKey = firebaseKey;
@@ -263,36 +340,21 @@
         } catch (e) { console.warn("Sync Failed", e); }
     }
 
-
     window.deleteMemo = async (id) => {
         if (!confirm("确定要永久删除这条备忘吗？（云端也将同步删除）")) return;
-
-        // 先从本地读取，获取 firebaseKey
         const tx = db.transaction('memos', 'readonly');
-        const store = tx.objectStore('memos');
-        
-        store.get(id).onsuccess = async (e) => {
+        tx.objectStore('memos').get(id).onsuccess = async (e) => {
             const memo = e.target.result;
             if (!memo) return;
-
             try {
-                // A. 如果已经同步过，先删除 Firebase 上的数据
                 if (memo.synced && memo.firebaseKey && currentUser) {
-                    const memoRef = ref(database, `memos/${memo.firebaseKey}`);
-                    await remove(memoRef);
-                    console.log("Firebase node removed.");
+                    await remove(ref(database, `memos/${memo.firebaseKey}`));
                 }
-
-                // B. 删除本地 IndexedDB 记录
                 const deleteTx = db.transaction('memos', 'readwrite');
                 deleteTx.objectStore('memos').delete(id);
-                deleteTx.oncomplete = () => {
-                    console.log("Local record deleted.");
-                    renderMemos();
-                };
+                deleteTx.oncomplete = renderMemos;
             } catch (error) {
-                console.error("Delete failed:", error);
-                alert("同步删除失败，请检查网络连接");
+                alert("删除失败，请检查网络");
             }
         };
     };
@@ -309,7 +371,7 @@
                     </div>
                     <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4 break-words">${m.content}</div>
                     <div class="flex items-center justify-between pt-3 border-t border-black/[0.02] dark:border-white/[0.03]">
-                        <span class="text-[10px] text-gray-400 font-medium opacity-50">${new Date(m.timestamp).toLocaleString()}</span>
+                        <div class="flex gap-2 flex-wrap">${m.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-lg">#${tag}</span>`).join('')}</div>
                         <span class="text-[9px] uppercase font-bold tracking-widest ${m.synced ? 'text-primary' : 'text-orange-400'}">${m.synced ? 'Synced' : 'Draft'}</span>
                     </div>
                 </article>
