@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#f5f8f6" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0a140d" media="(prefers-color-scheme: dark)">
+    <title>Echo Memos Pro</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "media",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df259",
+                        "background-light": "#f5f8f6",
+                        "background-dark": "#0a140d", 
+                        "surface-dark": "#16261b", 
+                        "surface-darker": "#0f1a12"
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root { color-scheme: light dark; }
+        body { 
+            padding-top: env(safe-area-inset-top); 
+            background-color: #f5f8f6; 
+        }
+        @media (prefers-color-scheme: dark) { 
+            body { background-color: #0a140d; } 
+            .ProseMirror { color: #e2e8f0 !important; }
+            .ProseMirror p.is-editor-empty:first-child::before { color: #4a5568 !important; }
+        }
+
+        #slash-menu {
+            position: absolute;
+            z-index: 100;
+            background: rgba(22, 38, 27, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(13, 242, 89, 0.2);
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            display: none;
+            width: calc(100% - 32px);
+            max-width: 360px;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 100%;
+            margin-bottom: 12px;
+        }
+
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+        .menu-item {
+            padding: 10px 12px;
+            font-size: 14px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .menu-item:active { background: #0df259; color: #102216; }
+
+        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; max-height: 30vh; overflow-y: auto; color: inherit; line-height: 1.5; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; height: 0; float: left; }
+
+        #settings-panel {
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #settings-panel.open { transform: translateX(0); }
+        article { border-radius: 1rem !important; }
+        
+        /* 解决 iOS 橡皮弩回弹背景色不一致 */
+        html { background-color: #f5f8f6; }
+        @media (prefers-color-scheme: dark) { html { background-color: #0a140d; } }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased transition-colors">
+
+<header class="fixed top-0 left-0 w-full z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
+    <div class="px-5 pb-4 flex items-center justify-between">
+        <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full active:bg-black/5">
+            <span class="material-symbols-outlined !text-[26px]">settings</span>
+        </button>
+        <h1 class="text-lg font-bold dark:text-white flex items-center gap-2">
+            <span class="text-primary material-symbols-outlined !text-[20px]">graphic_eq</span> echo
+            <span id="sync-indicator" class="text-[10px] font-normal opacity-40 ml-1">Local</span>
+        </h1>
+        <button class="p-2 -mr-2 text-gray-900 dark:text-white"><span class="material-symbols-outlined !text-[26px]">search</span></button>
+    </div>
+</header>
+
+<main id="memo-list" class="w-full max-w-md mx-auto px-4 pt-24 pb-48 flex flex-col gap-5"></main>
+
+<div id="settings-panel" class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)] overflow-y-auto">
+    <div class="flex items-center justify-between py-6">
+        <h2 class="text-2xl font-bold dark:text-white">设置</h2>
+        <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    <div class="space-y-4">
+        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
+            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">云同步 (Firebase)</p>
+            <div id="auth-section">
+                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
+                    <span>使用 Google 登录</span>
+                    <span class="material-symbols-outlined text-primary">login</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
+            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">数据管理</p>
+            <button onclick="exportData()" class="w-full text-left py-3 border-b border-black/5 dark:border-white/5 flex justify-between dark:text-white">
+                <span>导出全部记录 (JSON)</span>
+                <span class="material-symbols-outlined text-sm">download</span>
+            </button>
+            <button onclick="clearAllData()" class="w-full text-left py-3 text-red-500 flex justify-between font-medium">
+                <span>清空本地存储</span>
+                <span class="material-symbols-outlined text-sm">delete</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 dark:border-white/5 pt-4 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-md mx-auto relative px-4 mb-4">
+        <div id="slash-menu">
+            <div class="menu-grid">
+                <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>标题</div>
+                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
+                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签/-</div>
+                <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
+            </div>
+        </div>
+        <div class="flex items-end gap-3">
+            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3 px-5 transition-all border border-transparent focus-within:border-primary/30">
+                <div id="editor"></div>
+            </div>
+            <button id="send-btn" class="h-[3.2rem] w-[3.2rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90 transition-all">
+                <span class="material-symbols-outlined font-bold !text-[24px]">arrow_upward</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    import { Editor } from 'https://esm.sh/@tiptap/core'
+    import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+    import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+    import Image from 'https://esm.sh/@tiptap/extension-image'
+
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyA6MZ_p5lVuy8TMAqiuV6IRx9fggV44lQs",
+        authDomain: "outpost-8d74e.firebaseapp.com",
+        databaseURL: "https://outpost-medium-20250810.asia-southeast1.firebasedatabase.app/",
+        projectId: "outpost-8d74e",
+        storageBucket: "outpost-8d74e.firebasestorage.app",
+        messagingSenderId: "724993324937",
+        appId: "1:724993324937:web:ce6c7e6b06489331c79358"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    let db = null;
+    let manualTags = [];
+    let currentUser = null;
+
+    // --- Auth Logic ---
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        const authSection = document.getElementById('auth-section');
+        const syncIndicator = document.getElementById('sync-indicator');
+        
+        if (user) {
+            authSection.innerHTML = `
+                <div class="flex items-center justify-between py-2">
+                    <div class="flex items-center gap-3">
+                        <img src="${user.photoURL}" class="w-8 h-8 rounded-full border border-primary/20">
+                        <div class="text-sm">
+                            <p class="font-bold dark:text-white">${user.displayName}</p>
+                            <p class="text-[10px] opacity-50 dark:text-white">${user.email}</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" class="text-red-500 text-xs font-bold uppercase tracking-wider">退出</button>
+                </div>
+            `;
+            if (user.email === 'alexszhang@gmail.com') {
+                syncIndicator.innerText = "Cloud Active";
+                syncIndicator.classList.replace('opacity-40', 'text-primary');
+            } else {
+                syncIndicator.innerText = "ReadOnly (Alex Only)";
+            }
+        } else {
+            authSection.innerHTML = `
+                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
+                    <span>使用 Google 登录</span>
+                    <span class="material-symbols-outlined text-primary">login</span>
+                </button>
+            `;
+            syncIndicator.innerText = "Local";
+            syncIndicator.classList.replace('text-primary', 'opacity-40');
+        }
+    });
+
+    window.loginGoogle = async () => {
+        try { await signInWithPopup(auth, provider); } 
+        catch (err) { alert("登录失败: " + err.message); }
+    };
+    window.logout = () => signOut(auth);
+
+    // --- IndexedDB ---
+    const initDB = () => {
+        const request = indexedDB.open('EchoPWA_Firebase_V1', 1);
+        request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains('memos')) d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+        };
+        request.onsuccess = (e) => { db = e.target.result; renderMemos(); };
+    };
+    initDB();
+
+    // --- Tiptap ---
+    const menu = document.getElementById('slash-menu');
+    const hideMenu = () => { if(menu) menu.style.display = 'none'; };
+    const showMenu = () => { if(menu) menu.style.display = 'block'; };
+
+    const editor = new Editor({
+        element: document.querySelector('#editor'),
+        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '输入 / 唤起指令...' })],
+        onUpdate: ({ editor }) => {
+            const text = editor.getText();
+            if (!text.includes('/')) hideMenu();
+            if (text.endsWith('/')) showMenu();
+            if (text.endsWith('/-')) {
+                hideMenu();
+                const tag = prompt("输入标签名称");
+                if (tag) {
+                    manualTags.push(tag.trim().replace('#', ''));
+                    editor.commands.deleteRange({ from: editor.state.selection.from - 2, to: editor.state.selection.from });
+                }
+            }
+        },
+        onBlur: () => { setTimeout(hideMenu, 250); }
+    });
+
+    menu.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const item = e.target.closest('.menu-item');
+        if (!item) return;
+        const cmd = item.dataset.command;
+        editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
+        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
+        if (cmd === 'bulletList') editor.commands.toggleBulletList();
+        if (cmd === 'tag') {
+            const t = prompt("标签:"); if (t) manualTags.push(t.trim());
+        }
+        if (cmd === 'image') {
+            const url = prompt("图片 URL:"); if (url) editor.commands.setImage({ src: url });
+        }
+        hideMenu(); editor.commands.focus();
+    });
+
+    // --- Data Logic ---
+    async function syncToFirebase(memo) {
+        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+        try {
+            const memoRef = ref(database, 'memos');
+            const newPushRef = push(memoRef);
+            await set(newPushRef, memo);
+            console.log("Firebase Sync Success");
+        } catch (err) { console.error("Firebase Sync Error:", err); }
+    }
+
+    async function saveMemo() {
+        if (!db) return;
+        const text = editor.getText().trim();
+        const html = editor.getHTML();
+        if (!text && !html.includes('<img')) return;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const h1 = tempDiv.querySelector('h1');
+        const now = new Date();
+        const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        
+        const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
+        if (h1) h1.remove();
+
+        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
+        const finalTags = [...new Set([...hashTags, ...manualTags])];
+        if (finalTags.length === 0) finalTags.push("随笔");
+
+        const newMemo = {
+            title,
+            content: tempDiv.innerHTML,
+            tags: finalTags,
+            timestamp: Date.now()
+        };
+
+        const tx = db.transaction('memos', 'readwrite');
+        tx.objectStore('memos').add(newMemo);
+        tx.oncomplete = () => {
+            editor.commands.clearContent();
+            manualTags = [];
+            renderMemos();
+            syncToFirebase(newMemo);
+            setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+        };
+    }
+
+    window.deleteMemo = (id) => {
+        if (confirm("删除这条记录？")) {
+            db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
+        }
+    };
+
+    function renderMemos() {
+        const listEl = document.getElementById('memo-list');
+        if (!db || !listEl) return;
+        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+            const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
+            listEl.innerHTML = memos.map(memo => `
+                <article class="bg-white dark:bg-surface-dark px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm">
+                    <div class="flex justify-between items-start mb-1">
+                        <h3 class="text-[18px] font-bold text-primary leading-tight pr-4 break-words">${memo.title}</h3>
+                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 dark:text-gray-600 p-1 -mr-2">
+                            <span class="material-symbols-outlined !text-[20px]">close</span>
+                        </button>
+                    </div>
+                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4 break-words">
+                        ${memo.content}
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-black/[0.03] dark:border-white/[0.05]">
+                        <div class="flex gap-1.5 flex-wrap">${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-md">#${tag}</span>`).join('')}</div>
+                        <span class="text-[10px] text-gray-400 font-medium opacity-60">${new Date(memo.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
+                </article>
+            `).join('');
+        };
+    }
+
+    document.getElementById('send-btn').addEventListener('click', saveMemo);
+    window.toggleSettings = toggleSettings;
+    window.exportData = exportData;
+    window.clearAllData = clearAllData;
+</script>
+</body>
+</html>

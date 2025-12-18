@@ -23,7 +23,9 @@
                         "background-light": "#f5f8f6",
                         "background-dark": "#0a140d", 
                         "surface-dark": "#16261b", 
-                        "surface-darker": "#0f1a12"
+                        "surface-darker": "#0f1a12",
+                        "pending-light": "#ebeef0",
+                        "pending-dark": "#1d2e23"
                     }
                 }
             }
@@ -32,73 +34,56 @@
     
     <style>
         :root { color-scheme: light dark; }
-        body { 
-            padding-top: env(safe-area-inset-top); 
-            background-color: #f5f8f6; 
+        body { padding-top: env(safe-area-inset-top); background-color: #f5f8f6; }
+        @media (prefers-color-scheme: dark) { body { background-color: #0a140d; } }
+
+        /* Splash Screen */
+        #splash-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #f5f8f6; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
         }
-        @media (prefers-color-scheme: dark) { 
-            body { background-color: #0a140d; } 
-            .ProseMirror { color: #e2e8f0 !important; }
-            .ProseMirror p.is-editor-empty:first-child::before { color: #4a5568 !important; }
-        }
+        @media (prefers-color-scheme: dark) { #splash-screen { background: #0a140d; } }
 
         #slash-menu {
-            position: absolute;
-            z-index: 100;
-            background: rgba(22, 38, 27, 0.98);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(13, 242, 89, 0.2);
-            border-radius: 16px;
-            padding: 6px;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-            display: none;
-            width: calc(100% - 32px);
-            max-width: 360px;
-            left: 50%;
-            transform: translateX(-50%);
-            bottom: 100%;
-            margin-bottom: 12px;
+            position: absolute; z-index: 100; background: rgba(22, 38, 27, 0.98);
+            backdrop-filter: blur(15px); border: 1px solid rgba(13, 242, 89, 0.2);
+            border-radius: 16px; padding: 6px; display: none;
+            width: calc(100% - 32px); max-width: 360px; left: 50%;
+            transform: translateX(-50%); bottom: 100%; margin-bottom: 12px;
         }
 
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        .menu-item {
-            padding: 10px 12px;
-            font-size: 14px;
-            color: white;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .menu-item { padding: 10px 12px; font-size: 14px; color: white; border-radius: 10px; display: flex; align-items: center; gap: 10px; }
         .menu-item:active { background: #0df259; color: #102216; }
 
-        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; max-height: 30vh; overflow-y: auto; color: inherit; line-height: 1.5; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; height: 0; float: left; }
+        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; color: inherit; line-height: 1.5; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; }
 
-        #settings-panel {
-            transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        #settings-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #settings-panel.open { transform: translateX(0); }
-        article { border-radius: 1rem !important; }
-        
-        /* 解决 iOS 橡皮弩回弹背景色不一致 */
-        html { background-color: #f5f8f6; }
-        @media (prefers-color-scheme: dark) { html { background-color: #0a140d; } }
+        article { border-radius: 1.25rem !important; transition: all 0.3s ease; }
     </style>
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display antialiased transition-colors">
+<body class="bg-background-light dark:bg-background-dark font-display antialiased">
+
+<div id="splash-screen">
+    <div class="text-center">
+        <span class="text-primary material-symbols-outlined !text-[80px] mb-4">graphic_eq</span>
+        <h1 class="text-3xl font-bold dark:text-white mb-2">Echo Memos</h1>
+        <p class="text-gray-500 mb-10">请验证您的 Gmail 账户以同步数据</p>
+        <button onclick="loginGoogle()" class="flex items-center gap-3 bg-white dark:bg-surface-dark px-8 py-4 rounded-full shadow-xl border border-black/5 dark:border-white/10 active:scale-95 transition-all">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" class="w-6 h-6">
+            <span class="font-bold dark:text-white">使用 Google 登录</span>
+        </button>
+    </div>
+</div>
 
 <header class="fixed top-0 left-0 w-full z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
     <div class="px-5 pb-4 flex items-center justify-between">
-        <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full active:bg-black/5">
-            <span class="material-symbols-outlined !text-[26px]">settings</span>
-        </button>
-        <h1 class="text-lg font-bold dark:text-white flex items-center gap-2">
-            <span class="text-primary material-symbols-outlined !text-[20px]">graphic_eq</span> echo
-            <span id="sync-indicator" class="text-[10px] font-normal opacity-40 ml-1">Local</span>
-        </h1>
+        <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full"><span class="material-symbols-outlined !text-[26px]">settings</span></button>
+        <h1 class="text-lg font-bold dark:text-white">echo</h1>
         <button class="p-2 -mr-2 text-gray-900 dark:text-white"><span class="material-symbols-outlined !text-[26px]">search</span></button>
     </div>
 </header>
@@ -107,33 +92,14 @@
 
 <div id="settings-panel" class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)] overflow-y-auto">
     <div class="flex items-center justify-between py-6">
-        <h2 class="text-2xl font-bold dark:text-white">设置</h2>
-        <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900">
-            <span class="material-symbols-outlined">close</span>
-        </button>
+        <h2 class="text-2xl font-bold dark:text-white">账户设置</h2>
+        <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900"><span class="material-symbols-outlined">close</span></button>
     </div>
+    <div id="user-info" class="mb-6"></div>
     <div class="space-y-4">
-        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
-            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">云同步 (Firebase)</p>
-            <div id="auth-section">
-                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
-                    <span>使用 Google 登录</span>
-                    <span class="material-symbols-outlined text-primary">login</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5 dark:border-white/5">
-            <p class="text-[11px] opacity-40 mb-3 uppercase font-bold tracking-widest dark:text-white">数据管理</p>
-            <button onclick="exportData()" class="w-full text-left py-3 border-b border-black/5 dark:border-white/5 flex justify-between dark:text-white">
-                <span>导出全部记录 (JSON)</span>
-                <span class="material-symbols-outlined text-sm">download</span>
-            </button>
-            <button onclick="clearAllData()" class="w-full text-left py-3 text-red-500 flex justify-between font-medium">
-                <span>清空本地存储</span>
-                <span class="material-symbols-outlined text-sm">delete</span>
-            </button>
-        </div>
+        <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">logout</span> 退出登录
+        </button>
     </div>
 </div>
 
@@ -142,16 +108,16 @@
         <div id="slash-menu">
             <div class="menu-grid">
                 <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>标题</div>
-                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
-                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签/-</div>
+                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签</div>
                 <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
+                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
             </div>
         </div>
         <div class="flex items-end gap-3">
-            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3 px-5 transition-all border border-transparent focus-within:border-primary/30">
+            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3 px-5 transition-all">
                 <div id="editor"></div>
             </div>
-            <button id="send-btn" class="h-[3.2rem] w-[3.2rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg shadow-primary/20 active:scale-90 transition-all">
+            <button id="send-btn" class="h-[3.2rem] w-[3.2rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg active:scale-90 transition-all">
                 <span class="material-symbols-outlined font-bold !text-[24px]">arrow_upward</span>
             </button>
         </div>
@@ -159,24 +125,19 @@
 </div>
 
 <script type="module">
-    // Firebase Imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
     import { Editor } from 'https://esm.sh/@tiptap/core'
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
     import Image from 'https://esm.sh/@tiptap/extension-image'
 
-    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyA6MZ_p5lVuy8TMAqiuV6IRx9fggV44lQs",
         authDomain: "outpost-8d74e.firebaseapp.com",
         databaseURL: "https://outpost-medium-20250810.asia-southeast1.firebasedatabase.app/",
         projectId: "outpost-8d74e",
-        storageBucket: "outpost-8d74e.firebasestorage.app",
-        messagingSenderId: "724993324937",
         appId: "1:724993324937:web:ce6c7e6b06489331c79358"
     };
 
@@ -184,179 +145,112 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
     const provider = new GoogleAuthProvider();
+    let db, currentUser = null;
 
-    let db = null;
-    let manualTags = [];
-    let currentUser = null;
-
-    // --- Auth Logic ---
+    // --- Auth & Splash ---
     onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        const authSection = document.getElementById('auth-section');
-        const syncIndicator = document.getElementById('sync-indicator');
-        
-        if (user) {
-            authSection.innerHTML = `
-                <div class="flex items-center justify-between py-2">
-                    <div class="flex items-center gap-3">
-                        <img src="${user.photoURL}" class="w-8 h-8 rounded-full border border-primary/20">
-                        <div class="text-sm">
-                            <p class="font-bold dark:text-white">${user.displayName}</p>
-                            <p class="text-[10px] opacity-50 dark:text-white">${user.email}</p>
-                        </div>
-                    </div>
-                    <button onclick="logout()" class="text-red-500 text-xs font-bold uppercase tracking-wider">退出</button>
-                </div>
-            `;
-            if (user.email === 'alexszhang@gmail.com') {
-                syncIndicator.innerText = "Cloud Active";
-                syncIndicator.classList.replace('opacity-40', 'text-primary');
-            } else {
-                syncIndicator.innerText = "ReadOnly (Alex Only)";
-            }
+        const splash = document.getElementById('splash-screen');
+        if (user && user.email.endsWith('@gmail.com')) {
+            currentUser = user;
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.visibility = 'hidden', 500);
+            updateUserInfo();
+            renderMemos();
         } else {
-            authSection.innerHTML = `
-                <button onclick="loginGoogle()" class="w-full text-left py-3 flex justify-between items-center dark:text-white">
-                    <span>使用 Google 登录</span>
-                    <span class="material-symbols-outlined text-primary">login</span>
-                </button>
-            `;
-            syncIndicator.innerText = "Local";
-            syncIndicator.classList.replace('text-primary', 'opacity-40');
+            if(user) signOut(auth); // 强制退出非 Gmail 账户
+            splash.style.visibility = 'visible';
+            splash.style.opacity = '1';
         }
     });
 
-    window.loginGoogle = async () => {
-        try { await signInWithPopup(auth, provider); } 
-        catch (err) { alert("登录失败: " + err.message); }
-    };
-    window.logout = () => signOut(auth);
+    window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+    window.logout = () => signOut(auth).then(() => location.reload());
 
-    // --- IndexedDB ---
-    const initDB = () => {
-        const request = indexedDB.open('EchoPWA_Firebase_V1', 1);
-        request.onupgradeneeded = (e) => {
-            const d = e.target.result;
-            if (!d.objectStoreNames.contains('memos')) d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-        };
-        request.onsuccess = (e) => { db = e.target.result; renderMemos(); };
-    };
-    initDB();
-
-    // --- Tiptap ---
-    const menu = document.getElementById('slash-menu');
-    const hideMenu = () => { if(menu) menu.style.display = 'none'; };
-    const showMenu = () => { if(menu) menu.style.display = 'block'; };
-
-    const editor = new Editor({
-        element: document.querySelector('#editor'),
-        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '输入 / 唤起指令...' })],
-        onUpdate: ({ editor }) => {
-            const text = editor.getText();
-            if (!text.includes('/')) hideMenu();
-            if (text.endsWith('/')) showMenu();
-            if (text.endsWith('/-')) {
-                hideMenu();
-                const tag = prompt("输入标签名称");
-                if (tag) {
-                    manualTags.push(tag.trim().replace('#', ''));
-                    editor.commands.deleteRange({ from: editor.state.selection.from - 2, to: editor.state.selection.from });
-                }
-            }
-        },
-        onBlur: () => { setTimeout(hideMenu, 250); }
-    });
-
-    menu.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const item = e.target.closest('.menu-item');
-        if (!item) return;
-        const cmd = item.dataset.command;
-        editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
-        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
-        if (cmd === 'bulletList') editor.commands.toggleBulletList();
-        if (cmd === 'tag') {
-            const t = prompt("标签:"); if (t) manualTags.push(t.trim());
-        }
-        if (cmd === 'image') {
-            const url = prompt("图片 URL:"); if (url) editor.commands.setImage({ src: url });
-        }
-        hideMenu(); editor.commands.focus();
-    });
-
-    // --- Data Logic ---
-    async function syncToFirebase(memo) {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        try {
-            const memoRef = ref(database, 'memos');
-            const newPushRef = push(memoRef);
-            await set(newPushRef, memo);
-            console.log("Firebase Sync Success");
-        } catch (err) { console.error("Firebase Sync Error:", err); }
+    function updateUserInfo() {
+        document.getElementById('user-info').innerHTML = `
+            <div class="flex items-center gap-4 bg-white dark:bg-surface-dark p-4 rounded-2xl border border-black/5">
+                <img src="${currentUser.photoURL}" class="w-12 h-12 rounded-full border-2 border-primary">
+                <div>
+                    <p class="font-bold dark:text-white">${currentUser.displayName}</p>
+                    <p class="text-xs opacity-50 dark:text-white">${currentUser.email}</p>
+                </div>
+            </div>`;
     }
 
+    // --- IndexedDB ---
+    const request = indexedDB.open('EchoPWA_V10', 1);
+    request.onupgradeneeded = (e) => e.target.result.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+    request.onsuccess = (e) => { db = e.target.result; renderMemos(); };
+
+    // --- Editor & Data ---
+    const editor = new Editor({
+        element: document.querySelector('#editor'),
+        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '在此记录想法...' })],
+    });
+
     async function saveMemo() {
-        if (!db) return;
         const text = editor.getText().trim();
         const html = editor.getHTML();
         if (!text && !html.includes('<img')) return;
 
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const h1 = tempDiv.querySelector('h1');
-        const now = new Date();
-        const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        
-        const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
-        if (h1) h1.remove();
-
-        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
-        const finalTags = [...new Set([...hashTags, ...manualTags])];
-        if (finalTags.length === 0) finalTags.push("随笔");
-
-        const newMemo = {
-            title,
-            content: tempDiv.innerHTML,
-            tags: finalTags,
-            timestamp: Date.now()
+        const memo = {
+            title: text.split('\n')[0].substring(0,20) || '新随笔',
+            content: html,
+            tags: ["随笔"],
+            timestamp: Date.now(),
+            synced: false // 初始状态为未同步
         };
 
         const tx = db.transaction('memos', 'readwrite');
-        tx.objectStore('memos').add(newMemo);
-        tx.oncomplete = () => {
+        const req = tx.objectStore('memos').add(memo);
+        req.onsuccess = (e) => {
+            memo.id = e.target.result;
             editor.commands.clearContent();
-            manualTags = [];
             renderMemos();
-            syncToFirebase(newMemo);
-            setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+            trySync(memo);
         };
     }
 
+    async function trySync(memo) {
+        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+        try {
+            const memoRef = ref(database, 'memos');
+            await set(push(memoRef), { ...memo, synced: true });
+            
+            // 更新本地状态为已同步
+            const tx = db.transaction('memos', 'readwrite');
+            const store = tx.objectStore('memos');
+            memo.synced = true;
+            store.put(memo);
+            tx.oncomplete = renderMemos;
+        } catch (e) { console.error("Sync failed", e); }
+    }
+
+    window.manualSync = (id) => {
+        db.transaction('memos', 'readonly').objectStore('memos').get(id).onsuccess = (e) => trySync(e.target.result);
+    };
+
     window.deleteMemo = (id) => {
-        if (confirm("删除这条记录？")) {
-            db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
-        }
+        if(confirm("确定删除？")) db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
     };
 
     function renderMemos() {
-        const listEl = document.getElementById('memo-list');
-        if (!db || !listEl) return;
+        if (!db) return;
         db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
             const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
-            listEl.innerHTML = memos.map(memo => `
-                <article class="bg-white dark:bg-surface-dark px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm">
+            document.getElementById('memo-list').innerHTML = memos.map(m => `
+                <article class="${m.synced ? 'bg-white dark:bg-surface-dark' : 'bg-pending-light dark:bg-pending-dark'} px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm relative">
                     <div class="flex justify-between items-start mb-1">
-                        <h3 class="text-[18px] font-bold text-primary leading-tight pr-4 break-words">${memo.title}</h3>
-                        <button onclick="deleteMemo(${memo.id})" class="text-gray-300 dark:text-gray-600 p-1 -mr-2">
-                            <span class="material-symbols-outlined !text-[20px]">close</span>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            ${!m.synced ? `<button onclick="manualSync(${m.id})" class="text-primary animate-pulse"><span class="material-symbols-outlined !text-[20px]">cloud_upload</span></button>` : ''}
+                            <h3 class="text-[18px] font-bold text-primary leading-tight break-words">${m.title}</h3>
+                        </div>
+                        <button onclick="deleteMemo(${m.id})" class="text-gray-400 p-1 -mr-2"><span class="material-symbols-outlined !text-[20px]">close</span></button>
                     </div>
-                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4 break-words">
-                        ${memo.content}
-                    </div>
+                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4">${m.content}</div>
                     <div class="flex items-center justify-between pt-3 border-t border-black/[0.03] dark:border-white/[0.05]">
-                        <div class="flex gap-1.5 flex-wrap">${memo.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-md">#${tag}</span>`).join('')}</div>
-                        <span class="text-[10px] text-gray-400 font-medium opacity-60">${new Date(memo.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        <span class="text-[10px] text-gray-400 font-medium opacity-60">${new Date(m.timestamp).toLocaleString()}</span>
+                        <span class="text-[9px] uppercase font-bold ${m.synced ? 'text-primary' : 'text-orange-400'}">${m.synced ? 'Synced' : 'Local Draft'}</span>
                     </div>
                 </article>
             `).join('');
@@ -364,9 +258,7 @@
     }
 
     document.getElementById('send-btn').addEventListener('click', saveMemo);
-    window.toggleSettings = toggleSettings;
-    window.exportData = exportData;
-    window.clearAllData = clearAllData;
+    window.toggleSettings = (s) => document.getElementById('settings-panel').classList.toggle('open', s);
 </script>
 </body>
 </html>
