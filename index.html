@@ -102,7 +102,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { Editor } from 'https://esm.sh/@tiptap/core'
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
@@ -263,11 +263,38 @@
         } catch (e) { console.warn("Sync Failed", e); }
     }
 
-    window.deleteMemo = (id) => {
-        if(confirm("确定删除？")) {
-            db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
-            // 注意：此处仅删除了本地。Firebase 删除需要额外逻辑，建议先实现本地同步逻辑。
-        }
+
+    window.deleteMemo = async (id) => {
+        if (!confirm("确定要永久删除这条备忘吗？（云端也将同步删除）")) return;
+
+        // 先从本地读取，获取 firebaseKey
+        const tx = db.transaction('memos', 'readonly');
+        const store = tx.objectStore('memos');
+        
+        store.get(id).onsuccess = async (e) => {
+            const memo = e.target.result;
+            if (!memo) return;
+
+            try {
+                // A. 如果已经同步过，先删除 Firebase 上的数据
+                if (memo.synced && memo.firebaseKey && currentUser) {
+                    const memoRef = ref(database, `memos/${memo.firebaseKey}`);
+                    await remove(memoRef);
+                    console.log("Firebase node removed.");
+                }
+
+                // B. 删除本地 IndexedDB 记录
+                const deleteTx = db.transaction('memos', 'readwrite');
+                deleteTx.objectStore('memos').delete(id);
+                deleteTx.oncomplete = () => {
+                    console.log("Local record deleted.");
+                    renderMemos();
+                };
+            } catch (error) {
+                console.error("Delete failed:", error);
+                alert("同步删除失败，请检查网络连接");
+            }
+        };
     };
 
     function renderMemos() {
