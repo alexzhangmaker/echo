@@ -5,9 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#f5f8f6" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#0a140d" media="(prefers-color-scheme: dark)">
-    <title>Echo Memos Pro</title>
+    <title>Echo Memos Pro - v15</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -34,10 +32,8 @@
     
     <style>
         :root { color-scheme: light dark; }
-        body { padding-top: env(safe-area-inset-top); background-color: #f5f8f6; overflow-x: hidden; }
+        body { padding-top: env(safe-area-inset-top); background-color: #f5f8f6; }
         @media (prefers-color-scheme: dark) { body { background-color: #0a140d; } }
-
-        /* Splash Screen */
         #splash-screen {
             position: fixed; inset: 0; z-index: 9999;
             background: #f5f8f6; display: flex; flex-direction: column;
@@ -45,31 +41,10 @@
             transition: opacity 0.5s ease, visibility 0.5s;
         }
         @media (prefers-color-scheme: dark) { #splash-screen { background: #0a140d; } }
-
-        /* Slash Menu */
-        #slash-menu {
-            position: absolute; z-index: 100; background: rgba(22, 38, 27, 0.98);
-            backdrop-filter: blur(15px); border: 1px solid rgba(13, 242, 89, 0.2);
-            border-radius: 16px; padding: 6px; display: none;
-            width: calc(100% - 32px); max-width: 360px; left: 50%;
-            transform: translateX(-50%); bottom: 100%; margin-bottom: 12px;
-        }
-
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        .menu-item { padding: 10px 12px; font-size: 14px; color: white; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .menu-item:active { background: #0df259; color: #102216; }
-
-        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; color: inherit; line-height: 1.5; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; height: 0; }
-
         #settings-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         #settings-panel.open { transform: translateX(0); }
-        
-        article { border-radius: 1.25rem !important; transition: background-color 0.3s ease; }
-        
-        /* 隐藏滚动条但保持功能 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; color: inherit; line-height: 1.5; }
+        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display antialiased">
@@ -78,10 +53,10 @@
     <div class="text-center px-6">
         <span class="text-primary material-symbols-outlined !text-[80px] mb-4">graphic_eq</span>
         <h1 class="text-3xl font-bold dark:text-white mb-2">Echo Memos</h1>
-        <p class="text-gray-500 dark:text-gray-400 mb-10">验证您的 Gmail 账户以开启云端同步</p>
+        <p class="text-gray-500 mb-10">验证 Gmail 以同步您的思维碎片</p>
         <button onclick="loginGoogle()" class="flex items-center gap-3 bg-white dark:bg-surface-dark px-8 py-4 rounded-full shadow-xl border border-black/5 dark:border-white/10 active:scale-95 transition-all mx-auto">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" class="w-6 h-6">
-            <span class="font-bold dark:text-white">使用 Google 登录</span>
+            <span class="font-bold dark:text-white text-gray-900">使用 Google 登录</span>
         </button>
     </div>
 </div>
@@ -105,31 +80,19 @@
     </div>
     <div id="user-display" class="mb-8"></div>
     <div class="space-y-4">
-        <button onclick="exportData()" class="w-full bg-white dark:bg-surface-dark py-4 rounded-2xl flex justify-between px-6 dark:text-white border border-black/5">
-            <span>导出数据 (JSON)</span>
-            <span class="material-symbols-outlined">download</span>
-        </button>
         <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined">logout</span> 退出登录
+            <span class="material-symbols-outlined">logout</span> 退出并清空缓存
         </button>
     </div>
 </div>
 
 <div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 pt-4 pb-[env(safe-area-inset-bottom)]">
-    <div class="max-w-md mx-auto relative px-4 mb-4">
-        <div id="slash-menu">
-            <div class="menu-grid">
-                <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>标题</div>
-                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签</div>
-                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
-                <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
-            </div>
-        </div>
+    <div class="max-w-md mx-auto px-4 mb-4">
         <div class="flex items-end gap-3">
-            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5 transition-all">
+            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5">
                 <div id="editor"></div>
             </div>
-            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg active:scale-90 transition-all">
+            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg">
                 <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
             </button>
         </div>
@@ -139,7 +102,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     import { Editor } from 'https://esm.sh/@tiptap/core'
     import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
     import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
@@ -159,115 +122,102 @@
     const provider = new GoogleAuthProvider();
     let db, currentUser = null;
 
-    // --- 1. Auth & Splash Logic ---
+    // --- 1. 核心：带查重功能的同步监听 ---
+    function startSmartSync() {
+        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+        const memosRef = ref(database, 'memos');
+        
+        onChildAdded(memosRef, (snapshot) => {
+            const firebaseKey = snapshot.key;
+            const cloudMemo = snapshot.val();
+            
+            const tx = db.transaction('memos', 'readwrite');
+            const store = tx.objectStore('memos');
+            const index = store.index('firebaseKey');
+            
+            // 查重逻辑
+            index.get(firebaseKey).onsuccess = (e) => {
+                const existing = e.target.result;
+                const memoToStore = { 
+                    ...cloudMemo, 
+                    firebaseKey: firebaseKey, 
+                    synced: true 
+                };
+                
+                if (existing) {
+                    // 如果本地已存在（通过 firebaseKey 找到），更新它
+                    memoToStore.id = existing.id;
+                    store.put(memoToStore);
+                } else {
+                    // 如果是真正的云端新数据，插入它
+                    store.add(memoToStore);
+                }
+            };
+
+            tx.oncomplete = () => {
+                document.getElementById('sync-status').innerText = "Live";
+                renderMemos();
+            };
+        });
+    }
+
+    // --- 2. Auth & Login ---
     onAuthStateChanged(auth, (user) => {
         const splash = document.getElementById('splash-screen');
-        const syncStatus = document.getElementById('sync-status');
-        
         if (user && user.email.endsWith('@gmail.com')) {
             currentUser = user;
             splash.style.opacity = '0';
             setTimeout(() => splash.style.visibility = 'hidden', 500);
-            syncStatus.innerText = "Synced";
             updateUserUI();
-            if (db) fetchFromFirebase(); // 登录后尝试拉取
+            if (db) startSmartSync();
         } else {
-            if(user) signOut(auth); // 拒绝非 Gmail
             splash.style.visibility = 'visible';
             splash.style.opacity = '1';
-            syncStatus.innerText = "Offline";
         }
     });
 
-    window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
-    window.logout = () => signOut(auth).then(() => location.reload());
+    window.loginGoogle = () => signInWithPopup(auth, provider);
+    
+    // 退出时清空 IndexedDB，防止下次登录冲突
+    window.logout = async () => {
+        if (db) {
+            const tx = db.transaction('memos', 'readwrite');
+            tx.objectStore('memos').clear();
+            tx.oncomplete = () => signOut(auth).then(() => location.reload());
+        } else {
+            signOut(auth).then(() => location.reload());
+        }
+    };
 
     function updateUserUI() {
         document.getElementById('user-display').innerHTML = `
             <div class="flex items-center gap-4 bg-white dark:bg-surface-dark p-5 rounded-3xl border border-black/5">
                 <img src="${currentUser.photoURL}" class="w-12 h-12 rounded-full border-2 border-primary">
-                <div>
-                    <p class="font-bold dark:text-white leading-none mb-1">${currentUser.displayName}</p>
-                    <p class="text-xs opacity-50 dark:text-white">${currentUser.email}</p>
-                </div>
+                <div><p class="font-bold dark:text-white">${currentUser.displayName}</p><p class="text-xs opacity-50 dark:text-white">${currentUser.email}</p></div>
             </div>`;
     }
 
-    // --- 2. IndexedDB & Cloud Sync ---
-    const request = indexedDB.open('EchoPWA_V11', 1);
-    request.onupgradeneeded = (e) => e.target.result.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-    request.onsuccess = (e) => { 
-        db = e.target.result; 
-        renderMemos();
-        if(currentUser) fetchFromFirebase();
+    // --- 3. IndexedDB 设置 firebaseKey 为索引 ---
+    const initDB = () => {
+        const request = indexedDB.open('EchoPWA_V15', 1);
+        request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            const store = d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+            // 创建 firebaseKey 索引以便查重
+            store.createIndex('firebaseKey', 'firebaseKey', { unique: true });
+        };
+        request.onsuccess = (e) => { 
+            db = e.target.result; 
+            renderMemos();
+            if(currentUser) startSmartSync();
+        };
     };
+    initDB();
 
-    async function fetchFromFirebase() {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        try {
-            const snapshot = await get(child(ref(database), 'memos'));
-            if (snapshot.exists()) {
-                const cloudData = snapshot.val();
-                const tx = db.transaction('memos', 'readwrite');
-                const store = tx.objectStore('memos');
-                
-                Object.values(cloudData).forEach(memo => {
-                    memo.synced = true; // 云端来的默认已同步
-                    store.put(memo); 
-                });
-                tx.oncomplete = () => renderMemos();
-            }
-        } catch (e) { console.error("Fetch Error:", e); }
-    }
-
-    async function trySyncToFirebase(memo) {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        try {
-            const memoRef = ref(database, 'memos');
-            await set(push(memoRef), { ...memo, synced: true });
-            
-            const tx = db.transaction('memos', 'readwrite');
-            memo.synced = true;
-            tx.objectStore('memos').put(memo);
-            tx.oncomplete = renderMemos;
-        } catch (e) { console.warn("Cloud Sync Failed:", e); }
-    }
-
-    // --- 3. Editor & UI ---
+    // --- 4. Editor & Actions ---
     const editor = new Editor({
         element: document.querySelector('#editor'),
-        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '在此记录想法...' })],
-    });
-
-    const menu = document.getElementById('slash-menu');
-    editor.options.onUpdate = ({ editor }) => {
-        const text = editor.getText();
-        if (text.endsWith('/')) menu.style.display = 'block';
-        else if (!text.includes('/')) menu.style.display = 'none';
-        
-        if (text.endsWith('/-')) {
-            const t = prompt("标签名:");
-            if(t) {
-                const { from } = editor.state.selection;
-                editor.commands.deleteRange({ from: from - 2, to: from });
-                // 这里可以扩展手动标签逻辑
-            }
-        }
-    };
-
-    menu.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const item = e.target.closest('.menu-item');
-        if (!item) return;
-        const cmd = item.dataset.command;
-        editor.commands.deleteRange({ from: editor.state.selection.from - 1, to: editor.state.selection.from });
-        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
-        if (cmd === 'bulletList') editor.commands.toggleBulletList();
-        if (cmd === 'tag') {
-             const t = prompt("标签:"); // 简单处理
-        }
-        menu.style.display = 'none';
-        editor.commands.focus();
+        extensions: [StarterKit, Image, Placeholder.configure({ placeholder: '记录想法...' })],
     });
 
     async function saveMemo() {
@@ -275,12 +225,13 @@
         const html = editor.getHTML();
         if (!text && !html.includes('<img')) return;
 
+        // 本地临时对象 (无 firebaseKey)
         const memo = {
-            title: text.split('\n')[0].substring(0,25) || '未命名备忘',
+            title: text.split('\n')[0].substring(0,25) || '随笔',
             content: html,
-            tags: ["随笔"],
             timestamp: Date.now(),
-            synced: false
+            synced: false,
+            firebaseKey: null 
         };
 
         const tx = db.transaction('memos', 'readwrite');
@@ -289,17 +240,34 @@
             memo.id = e.target.result;
             editor.commands.clearContent();
             renderMemos();
-            trySyncToFirebase(memo); // 尝试上传
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            trySyncToFirebase(memo);
         };
     }
 
-    window.manualSync = (id) => {
-        db.transaction('memos', 'readonly').objectStore('memos').get(id).onsuccess = (e) => trySyncToFirebase(e.target.result);
-    };
+    async function trySyncToFirebase(memo) {
+        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+        try {
+            const memoRef = ref(database, 'memos');
+            const newRef = push(memoRef);
+            const firebaseKey = newRef.key;
+            
+            // 上传时包含这个 key
+            await set(newRef, { ...memo, synced: true, firebaseKey: firebaseKey });
+            
+            // 更新本地 ID 为带 key 的状态
+            const tx = db.transaction('memos', 'readwrite');
+            memo.synced = true;
+            memo.firebaseKey = firebaseKey;
+            tx.objectStore('memos').put(memo);
+            tx.oncomplete = renderMemos;
+        } catch (e) { console.warn("Sync Failed", e); }
+    }
 
     window.deleteMemo = (id) => {
-        if(confirm("确定删除？")) db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
+        if(confirm("确定删除？")) {
+            db.transaction('memos', 'readwrite').objectStore('memos').delete(id).onsuccess = renderMemos;
+            // 注意：此处仅删除了本地。Firebase 删除需要额外逻辑，建议先实现本地同步逻辑。
+        }
     };
 
     function renderMemos() {
@@ -309,32 +277,21 @@
             document.getElementById('memo-list').innerHTML = memos.map(m => `
                 <article class="${m.synced ? 'bg-white dark:bg-surface-dark' : 'bg-pending-light dark:bg-pending-dark'} px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm relative">
                     <div class="flex justify-between items-start mb-1">
-                        <div class="flex items-center gap-2">
-                            ${!m.synced ? `<button onclick="manualSync(${m.id})" class="text-primary animate-pulse"><span class="material-symbols-outlined !text-[18px]">cloud_upload</span></button>` : ''}
-                            <h3 class="text-[18px] font-bold text-primary leading-tight break-words">${m.title}</h3>
-                        </div>
+                        <h3 class="text-[18px] font-bold text-primary leading-tight break-words">${m.title}</h3>
                         <button onclick="deleteMemo(${m.id})" class="text-gray-300 dark:text-gray-600 p-1 -mr-1"><span class="material-symbols-outlined !text-[20px]">close</span></button>
                     </div>
-                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4">${m.content}</div>
+                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4 break-words">${m.content}</div>
                     <div class="flex items-center justify-between pt-3 border-t border-black/[0.02] dark:border-white/[0.03]">
-                        <span class="text-[10px] text-gray-400 font-medium opacity-50">${new Date(m.timestamp).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
-                        <span class="text-[9px] uppercase font-bold tracking-widest ${m.synced ? 'text-primary' : 'text-orange-400'}">${m.synced ? 'Synced' : 'Local'}</span>
+                        <span class="text-[10px] text-gray-400 font-medium opacity-50">${new Date(m.timestamp).toLocaleString()}</span>
+                        <span class="text-[9px] uppercase font-bold tracking-widest ${m.synced ? 'text-primary' : 'text-orange-400'}">${m.synced ? 'Synced' : 'Draft'}</span>
                     </div>
                 </article>
             `).join('');
         };
     }
 
-    // --- Global Controls ---
     document.getElementById('send-btn').addEventListener('click', saveMemo);
     window.toggleSettings = (s) => document.getElementById('settings-panel').classList.toggle('open', s);
-    window.exportData = () => {
-        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
-            const blob = new Blob([JSON.stringify(e.target.result, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `echo-export.json`; a.click();
-        };
-    };
 </script>
 </body>
 </html>
