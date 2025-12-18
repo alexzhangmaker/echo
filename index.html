@@ -1,26 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        name="viewport" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Echo Memos Pro - v15.1</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    
+
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "media",
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ["Noto Sans SC", "Spline Sans", "sans-serif"],
+                    },
                     colors: {
                         "primary": "#0df259",
+                        "primary-dark": "#0bc448",
                         "background-light": "#f5f8f6",
-                        "background-dark": "#0a140d", 
-                        "surface-dark": "#16261b", 
+                        "background-dark": "#0a140d",
+                        "surface-dark": "#16261b",
                         "surface-darker": "#0f1a12",
                         "pending-light": "#ebeef0",
                         "pending-dark": "#1d2e23"
@@ -29,358 +39,744 @@
             }
         }
     </script>
-    
+
     <style>
-        :root { color-scheme: light dark; }
-        body { padding-top: env(safe-area-inset-top); background-color: #f5f8f6; }
-        @media (prefers-color-scheme: dark) { body { background-color: #0a140d; } }
-        
+        :root {
+            color-scheme: light dark;
+        }
+
+        body {
+            padding-top: env(safe-area-inset-top);
+            background-color: #f5f8f6;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #0a140d;
+            }
+        }
+
         #splash-screen {
-            position: fixed; inset: 0; z-index: 9999;
-            background: #f5f8f6; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #f5f8f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             transition: opacity 0.5s ease, visibility 0.5s;
         }
-        @media (prefers-color-scheme: dark) { #splash-screen { background: #0a140d; } }
-        
-        #settings-panel { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        #settings-panel.open { transform: translateX(0); }
+
+        @media (prefers-color-scheme: dark) {
+            #splash-screen {
+                background: #0a140d;
+            }
+        }
+
+        #settings-panel {
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #settings-panel.open {
+            transform: translateX(0);
+        }
+
+        #search-container {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            z-index: 50;
+        }
+
+        #search-container.open {
+            width: calc(100% - 64px);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #search-input {
+            width: 100%;
+            height: 38px;
+            border-radius: 19px;
+            padding: 0 40px 0 16px;
+            font-size: 15px;
+            outline: none;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: block;
+        }
+
+        #search-open-btn {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        #search-open-btn.hidden-btn {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #search-input {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: white;
+            }
+        }
 
         /* Slash Menu Style */
         #slash-menu {
-            position: absolute; z-index: 100; background: rgba(22, 38, 27, 0.98);
-            backdrop-filter: blur(15px); border: 1px solid rgba(13, 242, 89, 0.3);
-            border-radius: 16px; padding: 6px; box-shadow: 0 -10px 25px -5px rgba(0,0,0,0.4);
-            display: none; width: calc(100% - 32px); max-width: 360px;
-            left: 50%; transform: translateX(-50%); bottom: 100%; margin-bottom: 12px;
+            position: absolute;
+            z-index: 100;
+            background: rgba(22, 38, 27, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(13, 242, 89, 0.3);
+            border-radius: 16px;
+            padding: 6px;
+            box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.4);
+            display: none;
+            width: calc(100% - 32px);
+            max-width: 360px;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 100%;
+            margin-bottom: 12px;
         }
-        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        .menu-item { padding: 10px 12px; font-size: 14px; color: white; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-        .menu-item:active { background: #0df259; color: #102216; }
 
-        .ProseMirror { font-size: 17px; outline: none !important; min-height: 24px; color: inherit; line-height: 1.5; }
-        .ProseMirror p.is-editor-empty:first-child::before { content: "输入 / 唤起指令..."; color: #94a3b8; pointer-events: none; float: left; height: 0; }
-        
-        article { border-radius: 1.25rem !important; }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+
+        .menu-item {
+            padding: 10px 12px;
+            font-size: 14px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-item:active {
+            background: #0df259;
+            color: #102216;
+        }
+
+        .ProseMirror {
+            font-size: 17px;
+            outline: none !important;
+            min-height: 24px;
+            color: inherit;
+            line-height: 1.5;
+        }
+
+        .ProseMirror p.is-editor-empty:first-child::before {
+            content: "输入 / 唤起指令...";
+            color: #94a3b8;
+            pointer-events: none;
+            float: left;
+            height: 0;
+        }
+
+        article {
+            border-radius: 1.25rem !important;
+        }
+
+        /* Custom Modal */
+        #custom-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #custom-modal-overlay {
+                background: rgba(0, 0, 0, 0.6);
+            }
+        }
+
+        #custom-modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            width: 100%;
+            max-width: 340px;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .modal-box {
+                background: #1a2c20;
+                border: 1px solid rgba(255, 255, 255, 0.05);
+            }
+        }
+
+        .modal-box h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .modal-box input {
+            width: 100%;
+            background: #f1f5f9;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .modal-box input {
+                background: rgba(255, 255, 255, 0.05);
+                color: white;
+            }
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .modal-btn-confirm {
+            background: #0df259;
+            color: #102216;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .modal-btn-cancel {
+                background: rgba(255, 255, 255, 0.05);
+                color: #94a3b8;
+            }
+        }
     </style>
 </head>
+
 <body class="bg-background-light dark:bg-background-dark font-display antialiased">
-
-<div id="splash-screen">
-    <div class="text-center px-6">
-        <span class="text-primary material-symbols-outlined !text-[80px] mb-4">graphic_eq</span>
-        <h1 class="text-3xl font-bold dark:text-white mb-2">Echo Memos</h1>
-        <p class="text-gray-500 mb-10">验证 Gmail 以同步您的思维碎片</p>
-        <button onclick="loginGoogle()" class="flex items-center gap-3 bg-white dark:bg-surface-dark px-8 py-4 rounded-full shadow-xl border border-black/5 dark:border-white/10 active:scale-95 transition-all mx-auto">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" class="w-6 h-6">
-            <span class="font-bold dark:text-white text-gray-900">使用 Google 登录</span>
-        </button>
-    </div>
-</div>
-
-<header class="fixed top-0 left-0 w-full z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
-    <div class="px-5 pb-4 flex items-center justify-between">
-        <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full"><span class="material-symbols-outlined !text-[26px]">settings</span></button>
-        <h1 class="text-lg font-bold dark:text-white flex items-center gap-1">
-            echo<span id="sync-status" class="text-[10px] font-normal opacity-30 ml-2">Init...</span>
-        </h1>
-        <button class="p-2 -mr-2 text-gray-900 dark:text-white"><span class="material-symbols-outlined !text-[26px]">search</span></button>
-    </div>
-</header>
-
-<main id="memo-list" class="w-full max-w-md mx-auto px-4 pt-24 pb-48 flex flex-col gap-5"></main>
-
-<div id="settings-panel" class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)] overflow-y-auto">
-    <div class="flex items-center justify-between py-6">
-        <h2 class="text-2xl font-bold dark:text-white">设置</h2>
-        <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    <div id="user-display" class="mb-8"></div>
-    <div class="space-y-4">
-        <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
-            <span class="material-symbols-outlined">logout</span> 退出并清空缓存
-        </button>
-    </div>
-</div>
-
-<div class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 pt-4 pb-[env(safe-area-inset-bottom)]">
-    <div class="max-w-md mx-auto relative px-4 mb-4">
-        <div id="slash-menu">
-            <div class="menu-grid">
-                <div class="menu-item" data-command="h1"><span class="material-symbols-outlined text-primary">format_h1</span>大标题</div>
-                <div class="menu-item" data-command="bulletList"><span class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
-                <div class="menu-item" data-command="tag"><span class="material-symbols-outlined text-primary">label</span>标签/-</div>
-                <div class="menu-item" data-command="image"><span class="material-symbols-outlined text-primary">image</span>图片</div>
+    <div id="custom-modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-title" class="dark:text-white">输入</h3>
+            <input type="text" id="modal-input" spellcheck="false" autocomplete="off">
+            <div class="modal-actions">
+                <button id="modal-cancel" class="modal-btn modal-btn-cancel">取消</button>
+                <button id="modal-confirm" class="modal-btn modal-btn-confirm">确定</button>
             </div>
         </div>
+    </div>
 
-        <div class="flex items-end gap-3">
-            <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5 transition-all">
-                <div id="editor"></div>
-            </div>
-            <button id="send-btn" class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg active:scale-95 transition-all">
-                <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
+    <div id="splash-screen">
+        <div class="text-center px-6">
+            <span class="text-primary material-symbols-outlined !text-[80px] mb-4">graphic_eq</span>
+            <h1 class="text-3xl font-bold dark:text-white mb-2">Echo Memos</h1>
+            <p class="text-gray-500 mb-10">验证 Gmail 以同步您的思维碎片</p>
+            <button onclick="loginGoogle()"
+                class="flex items-center gap-3 bg-white dark:bg-surface-dark px-8 py-4 rounded-full shadow-xl border border-black/5 dark:border-white/10 active:scale-95 transition-all mx-auto">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa/google.svg" class="w-6 h-6">
+                <span class="font-bold dark:text-white text-gray-900">使用 Google 登录</span>
             </button>
         </div>
     </div>
-</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getDatabase, ref, push, set, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { Editor } from 'https://esm.sh/@tiptap/core'
-    import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
-    import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
-    import Image from 'https://esm.sh/@tiptap/extension-image'
+    <header
+        class="fixed top-0 left-0 w-full z-40 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 pt-[env(safe-area-inset-top)]">
+        <div class="px-5 pb-4 flex items-center justify-between relative overflow-hidden">
+            <button onclick="toggleSettings(true)" class="p-2 -ml-2 text-gray-900 dark:text-white rounded-full"><span
+                    class="material-symbols-outlined !text-[26px]">settings</span></button>
+            <h1 id="header-title"
+                class="text-lg font-bold dark:text-white flex items-center gap-1 transition-opacity duration-300">
+                echo<span id="sync-status" class="text-[10px] font-normal opacity-30 ml-2">Init...</span>
+            </h1>
+            <button onclick="toggleSearch(true)" id="search-open-btn"
+                class="p-2 -mr-2 text-gray-900 dark:text-white"><span
+                    class="material-symbols-outlined !text-[26px]">search</span></button>
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyA6MZ_p5lVuy8TMAqiuV6IRx9fggV44lQs",
-        authDomain: "outpost-8d74e.firebaseapp.com",
-        databaseURL: "https://outpost-medium-20250810.asia-southeast1.firebasedatabase.app/",
-        projectId: "outpost-8d74e",
-        appId: "1:724993324937:web:ce6c7e6b06489331c79358"
-    };
+            <div id="search-container" class="flex gap-2">
+                <input type="text" id="search-input" placeholder="搜索标题..."
+                    class="focus:ring-2 focus:ring-primary/30 transition-all">
+                <button onclick="toggleSearch(false)"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                    <span class="material-symbols-outlined !text-[20px]">close</span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const database = getDatabase(app);
-    const provider = new GoogleAuthProvider();
-    let db, currentUser = null;
-    let manualTags = [];
+    <main id="memo-list" class="w-full max-w-md mx-auto px-4 pt-24 pb-48 flex flex-col gap-5"></main>
 
-    // --- 1. 同步监听逻辑 ---
-    function startSmartSync() {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        const memosRef = ref(database, 'memos');
-        
-        onChildAdded(memosRef, (snapshot) => {
-            const firebaseKey = snapshot.key;
-            const cloudMemo = snapshot.val();
-            const tx = db.transaction('memos', 'readwrite');
-            const store = tx.objectStore('memos');
-            const index = store.index('firebaseKey');
-            
-            index.get(firebaseKey).onsuccess = (e) => {
-                const existing = e.target.result;
-                const memoToStore = { ...cloudMemo, firebaseKey: firebaseKey, synced: true };
-                if (existing) {
-                    memoToStore.id = existing.id;
-                    store.put(memoToStore);
-                } else {
-                    store.add(memoToStore);
+    <div id="settings-panel"
+        class="fixed inset-0 z-[100] bg-background-light dark:bg-background-dark px-6 pt-[env(safe-area-inset-top)] overflow-y-auto">
+        <div class="flex items-center justify-between py-6">
+            <h2 class="text-2xl font-bold dark:text-white">设置</h2>
+            <button onclick="toggleSettings(false)" class="p-2 dark:text-white text-gray-900"><span
+                    class="material-symbols-outlined">close</span></button>
+        </div>
+        <div id="user-display" class="mb-8"></div>
+        <div class="space-y-4">
+            <button onclick="logout()"
+                class="w-full bg-red-500/10 text-red-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined">logout</span> 退出并清空缓存
+            </button>
+        </div>
+    </div>
+
+    <div
+        class="fixed bottom-0 left-0 w-full z-50 bg-white/95 dark:bg-surface-dark/95 backdrop-blur-2xl border-t border-black/5 pt-4 pb-[env(safe-area-inset-bottom)]">
+        <div class="max-w-md mx-auto relative px-4 mb-4">
+            <div id="slash-menu">
+                <div class="menu-grid">
+                    <div class="menu-item" data-command="h1"><span
+                            class="material-symbols-outlined text-primary">format_h1</span>大标题</div>
+                    <div class="menu-item" data-command="bulletList"><span
+                            class="material-symbols-outlined text-primary">format_list_bulleted</span>列表</div>
+                    <div class="menu-item" data-command="tag"><span
+                            class="material-symbols-outlined text-primary">label</span>标签/-</div>
+                    <div class="menu-item" data-command="image"><span
+                            class="material-symbols-outlined text-primary">image</span>图片</div>
+                    <div class="menu-item" data-command="link"><span
+                            class="material-symbols-outlined text-primary">link</span>链接</div>
+                </div>
+            </div>
+
+            <div class="flex items-end gap-3">
+                <div class="flex-1 bg-gray-100 dark:bg-surface-darker rounded-[1.5rem] py-3.5 px-5 transition-all">
+                    <div id="editor"></div>
+                </div>
+                <button id="send-btn"
+                    class="h-[3.5rem] w-[3.5rem] flex-shrink-0 flex items-center justify-center rounded-full bg-primary text-background-dark shadow-lg active:scale-95 transition-all">
+                    <span class="material-symbols-outlined font-bold !text-[28px]">arrow_upward</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, set, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { Editor } from 'https://esm.sh/@tiptap/core'
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+        import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+        import Image from 'https://esm.sh/@tiptap/extension-image'
+        import Link from 'https://esm.sh/@tiptap/extension-link'
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6MZ_p5lVuy8TMAqiuV6IRx9fggV44lQs",
+            authDomain: "outpost-8d74e.firebaseapp.com",
+            databaseURL: "https://outpost-medium-20250810.asia-southeast1.firebasedatabase.app/",
+            projectId: "outpost-8d74e",
+            appId: "1:724993324937:web:ce6c7e6b06489331c79358"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+        let db, currentUser = null;
+        let manualTags = [];
+        let searchQuery = "";
+        let isMenuInteracting = false;
+
+        // --- 0. Custom Modal Helper ---
+        const modalOverlay = document.getElementById('custom-modal-overlay');
+        const modalInput = document.getElementById('modal-input');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalConfirm = document.getElementById('modal-confirm');
+        let modalCallback = null;
+
+        function showPrompt(title, defaultValue, callback) {
+            modalTitle.innerText = title;
+            modalInput.value = defaultValue || "";
+            modalOverlay.classList.add('open');
+            modalCallback = callback;
+            isMenuInteracting = true;
+            setTimeout(() => modalInput.focus(), 100);
+        }
+
+        function closePrompt(success) {
+            const value = modalInput.value;
+            modalOverlay.classList.remove('open');
+            if (modalCallback) {
+                modalCallback(success ? value : null);
+            }
+            modalCallback = null;
+            isMenuInteracting = false;
+            editor.commands.focus();
+        }
+
+        modalConfirm.onclick = () => closePrompt(true);
+        modalCancel.onclick = () => closePrompt(false);
+        modalInput.onkeydown = (e) => {
+            if (e.key === 'Enter') closePrompt(true);
+            if (e.key === 'Escape') closePrompt(false);
+        };
+
+        // --- 1. 同步监听逻辑 ---
+        async function startSmartSync() {
+            if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+            const memosRef = ref(database, 'memos');
+
+            // 初始加载：读取所有已有数据
+            try {
+                const snapshot = await get(memosRef);
+                if (snapshot.exists()) {
+                    const tx = db.transaction('memos', 'readwrite');
+                    const store = tx.objectStore('memos');
+                    const index = store.index('firebaseKey');
+
+                    const promises = [];
+                    snapshot.forEach((child) => {
+                        const firebaseKey = child.key;
+                        const cloudMemo = child.val();
+
+                        const p = new Promise((resolve) => {
+                            index.get(firebaseKey).onsuccess = (e) => {
+                                const existing = e.target.result;
+                                const memoToStore = { ...cloudMemo, firebaseKey: firebaseKey, synced: true };
+                                if (existing) {
+                                    memoToStore.id = existing.id;
+                                    store.put(memoToStore);
+                                } else {
+                                    store.add(memoToStore);
+                                }
+                                resolve();
+                            };
+                        });
+                        promises.push(p);
+                    });
+
+                    await Promise.all(promises);
+                    document.getElementById('sync-status').innerText = "Live";
+                    renderMemos();
                 }
-            };
-            tx.oncomplete = () => {
-                document.getElementById('sync-status').innerText = "Live";
-                renderMemos();
-            };
+            } catch (e) {
+                console.error("Initial load failed", e);
+            }
+
+            // 增量监听：后续更新
+            onChildAdded(memosRef, (snapshot) => {
+                const firebaseKey = snapshot.key;
+                const cloudMemo = snapshot.val();
+                const tx = db.transaction('memos', 'readwrite');
+                const store = tx.objectStore('memos');
+                const index = store.index('firebaseKey');
+
+                index.get(firebaseKey).onsuccess = (e) => {
+                    const existing = e.target.result;
+                    if (existing) return; // 初始加载已处理
+
+                    const memoToStore = { ...cloudMemo, firebaseKey: firebaseKey, synced: true };
+                    store.add(memoToStore);
+                };
+                tx.oncomplete = () => {
+                    document.getElementById('sync-status').innerText = "Live";
+                    renderMemos();
+                };
+            });
+        }
+
+        // --- 2. Auth Logic ---
+        onAuthStateChanged(auth, (user) => {
+            const splash = document.getElementById('splash-screen');
+            if (user && user.email.endsWith('@gmail.com')) {
+                currentUser = user;
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.visibility = 'hidden', 500);
+                updateUserUI();
+                if (db) startSmartSync();
+            } else {
+                splash.style.visibility = 'visible';
+                splash.style.opacity = '1';
+            }
         });
-    }
 
-    // --- 2. Auth Logic ---
-    onAuthStateChanged(auth, (user) => {
-        const splash = document.getElementById('splash-screen');
-        if (user && user.email.endsWith('@gmail.com')) {
-            currentUser = user;
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.visibility = 'hidden', 500);
-            updateUserUI();
-            if (db) startSmartSync();
-        } else {
-            splash.style.visibility = 'visible';
-            splash.style.opacity = '1';
-        }
-    });
+        window.loginGoogle = () => signInWithPopup(auth, provider);
+        window.logout = async () => {
+            if (db) {
+                const tx = db.transaction('memos', 'readwrite');
+                tx.objectStore('memos').clear();
+                tx.oncomplete = () => signOut(auth).then(() => location.reload());
+            } else {
+                signOut(auth).then(() => location.reload());
+            }
+        };
 
-    window.loginGoogle = () => signInWithPopup(auth, provider);
-    window.logout = async () => {
-        if (db) {
-            const tx = db.transaction('memos', 'readwrite');
-            tx.objectStore('memos').clear();
-            tx.oncomplete = () => signOut(auth).then(() => location.reload());
-        } else {
-            signOut(auth).then(() => location.reload());
-        }
-    };
-
-    function updateUserUI() {
-        document.getElementById('user-display').innerHTML = `
+        function updateUserUI() {
+            document.getElementById('user-display').innerHTML = `
             <div class="flex items-center gap-4 bg-white dark:bg-surface-dark p-5 rounded-3xl border border-black/5">
                 <img src="${currentUser.photoURL}" class="w-12 h-12 rounded-full border-2 border-primary">
                 <div><p class="font-bold dark:text-white">${currentUser.displayName}</p><p class="text-xs opacity-50 dark:text-white">${currentUser.email}</p></div>
             </div>`;
-    }
+        }
 
-    // --- 3. IndexedDB Initialization ---
-    const initDB = () => {
-        const request = indexedDB.open('EchoPWA_V15', 1);
-        request.onupgradeneeded = (e) => {
-            const d = e.target.result;
-            const store = d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('firebaseKey', 'firebaseKey', { unique: true });
+        // --- 3. IndexedDB Initialization ---
+        const initDB = () => {
+            const request = indexedDB.open('EchoPWA_V15', 1);
+            request.onupgradeneeded = (e) => {
+                const d = e.target.result;
+                const store = d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('firebaseKey', 'firebaseKey', { unique: true });
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                renderMemos();
+                if (currentUser) startSmartSync();
+            };
         };
-        request.onsuccess = (e) => { 
-            db = e.target.result; 
-            renderMemos();
-            if(currentUser) startSmartSync();
-        };
-    };
-    initDB();
+        initDB();
 
-    // --- 4. Tiptap Editor & Slash Menu Logic ---
-    const slashMenu = document.getElementById('slash-menu');
-    const hideMenu = () => { slashMenu.style.display = 'none'; };
-    const showMenu = () => { slashMenu.style.display = 'block'; };
+        // --- 4. Tiptap Editor & Slash Menu Logic ---
+        const slashMenu = document.getElementById('slash-menu');
+        const hideMenu = () => { slashMenu.style.display = 'none'; };
+        const showMenu = () => { slashMenu.style.display = 'block'; };
 
-    const editor = new Editor({
-        element: document.querySelector('#editor'),
-        extensions: [
-            StarterKit, 
-            Image, 
-            Placeholder.configure({ placeholder: '记录想法...' })
-        ],
-        onUpdate: ({ editor }) => {
-            const content = editor.getText();
-            // 逻辑 1: 如果删除了 /，立即隐藏菜单
-            if (!content.includes('/')) hideMenu();
-            // 逻辑 2: 唤起菜单
-            if (content.endsWith('/')) showMenu();
-            // 逻辑 3: /- 快捷标签指令
-            if (content.endsWith('/-')) {
+        const editor = new Editor({
+            element: document.querySelector('#editor'),
+            extensions: [
+                StarterKit,
+                Image,
+                Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-primary underline cursor-pointer' } }),
+                Placeholder.configure({ placeholder: '记录想法...' })
+            ],
+            onUpdate: ({ editor }) => {
+                const { state } = editor;
+                const { from } = state.selection;
+                const text = state.doc.textBetween(Math.max(0, from - 2), from, "\n");
+
+                // 逻辑 1: 如果删除了 /，立即隐藏菜单
+                if (!text.includes('/')) hideMenu();
+                // 逻辑 2: 唤起菜单
+                if (text.endsWith('/') && !text.endsWith('//')) showMenu();
+                // 逻辑 3: /- 快捷标签指令
+                if (text.endsWith('/-')) {
+                    hideMenu();
+                    showPrompt("标签名称", "", (tagValue) => {
+                        if (tagValue) {
+                            manualTags.push(tagValue.trim());
+                            editor.commands.deleteRange({ from: from - 2, to: from });
+                        }
+                    });
+                }
+            },
+            onBlur: () => {
+                if (!isMenuInteracting) {
+                    setTimeout(hideMenu, 250);
+                }
+            }
+        });
+
+        // 处理 Slash Menu 点击
+        slashMenu.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // 关键：防止失去焦点
+            const item = e.target.closest('.menu-item');
+            if (!item) return;
+
+            isMenuInteracting = true;
+            const cmd = item.dataset.command;
+            const { from } = editor.state.selection;
+            // 删除刚输入的 "/"
+            editor.commands.deleteRange({ from: from - 1, to: from });
+
+            if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
+            if (cmd === 'bulletList') editor.commands.toggleBulletList();
+            if (cmd === 'tag') {
+                showPrompt("标签名", "", (t) => {
+                    if (t) manualTags.push(t.trim());
+                });
                 hideMenu();
-                const tagValue = prompt("输入标签名称");
-                if (tagValue) {
-                    manualTags.push(tagValue.trim());
-                    const { from } = editor.state.selection;
-                    editor.commands.deleteRange({ from: from - 2, to: from });
-                }
+                return;
             }
-        },
-        onBlur: () => { setTimeout(hideMenu, 250); }
-    });
+            if (cmd === 'image') {
+                showPrompt("图片 URL", "", (url) => {
+                    if (url) editor.commands.setImage({ src: url });
+                });
+                hideMenu();
+                return;
+            }
+            if (cmd === 'link') {
+                showPrompt("链接 URL", "https://", (url) => {
+                    if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+                });
+                hideMenu();
+                return;
+            }
 
-    // 处理 Slash Menu 点击
-    slashMenu.addEventListener('mousedown', (e) => {
-        e.preventDefault(); // 关键：防止失去焦点
-        const item = e.target.closest('.menu-item');
-        if (!item) return;
+            isMenuInteracting = false;
+            hideMenu();
+            editor.commands.focus();
+        });
 
-        const cmd = item.dataset.command;
-        const { from } = editor.state.selection;
-        // 删除刚输入的 "/"
-        editor.commands.deleteRange({ from: from - 1, to: from });
+        // --- 5. Data Actions ---
+        async function saveMemo() {
+            const text = editor.getText().trim();
+            const html = editor.getHTML();
+            if (!text && !html.includes('<img')) return;
 
-        if (cmd === 'h1') editor.commands.toggleHeading({ level: 1 });
-        if (cmd === 'bulletList') editor.commands.toggleBulletList();
-        if (cmd === 'tag') {
-            const t = prompt("标签名:");
-            if(t) manualTags.push(t.trim());
-        }
-        if (cmd === 'image') {
-            const url = prompt("图片 URL:");
-            if(url) editor.commands.setImage({ src: url });
-        }
-        hideMenu();
-        editor.commands.focus();
-    });
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const h1 = tempDiv.querySelector('h1');
 
-    // --- 5. Data Actions ---
-    async function saveMemo() {
-        const text = editor.getText().trim();
-        const html = editor.getHTML();
-        if (!text && !html.includes('<img')) return;
+            const d = new Date();
+            const timeStr = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+            const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
+            if (h1) h1.remove();
 
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const h1 = tempDiv.querySelector('h1');
-        
-        const d = new Date();
-        const timeStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        const title = h1 ? h1.innerText.trim() : `随笔 ${timeStr}`;
-        if (h1) h1.remove();
+            const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
+            const finalTags = [...new Set([...hashTags, ...manualTags])];
+            if (finalTags.length === 0) finalTags.push("随笔");
 
-        const hashTags = text.match(/#[\w\u4e00-\u9fa5]+/g)?.map(t => t.replace('#', '')) || [];
-        const finalTags = [...new Set([...hashTags, ...manualTags])];
-        if (finalTags.length === 0) finalTags.push("随笔");
+            const memo = {
+                title: title,
+                content: tempDiv.innerHTML,
+                tags: finalTags,
+                timestamp: Date.now(),
+                synced: false,
+                firebaseKey: null
+            };
 
-        const memo = {
-            title: title,
-            content: tempDiv.innerHTML,
-            tags: finalTags,
-            timestamp: Date.now(),
-            synced: false,
-            firebaseKey: null 
-        };
-
-        const tx = db.transaction('memos', 'readwrite');
-        const req = tx.objectStore('memos').add(memo);
-        req.onsuccess = (e) => {
-            memo.id = e.target.result;
-            editor.commands.clearContent();
-            manualTags = [];
-            renderMemos();
-            trySyncToFirebase(memo);
-        };
-    }
-
-    async function trySyncToFirebase(memo) {
-        if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
-        try {
-            const memoRef = ref(database, 'memos');
-            const newRef = push(memoRef);
-            const firebaseKey = newRef.key;
-            await set(newRef, { ...memo, synced: true, firebaseKey: firebaseKey });
-            
             const tx = db.transaction('memos', 'readwrite');
-            memo.synced = true;
-            memo.firebaseKey = firebaseKey;
-            tx.objectStore('memos').put(memo);
-            tx.oncomplete = renderMemos;
-        } catch (e) { console.warn("Sync Failed", e); }
-    }
+            const req = tx.objectStore('memos').add(memo);
+            req.onsuccess = (e) => {
+                memo.id = e.target.result;
+                editor.commands.clearContent();
+                manualTags = [];
+                renderMemos();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                trySyncToFirebase(memo);
+            };
+        }
 
-    window.deleteMemo = async (id) => {
-        if (!confirm("确定要永久删除这条备忘吗？（云端也将同步删除）")) return;
-        const tx = db.transaction('memos', 'readonly');
-        tx.objectStore('memos').get(id).onsuccess = async (e) => {
-            const memo = e.target.result;
-            if (!memo) return;
+        async function trySyncToFirebase(memo) {
+            if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
             try {
-                if (memo.synced && memo.firebaseKey && currentUser) {
-                    await remove(ref(database, `memos/${memo.firebaseKey}`));
-                }
-                const deleteTx = db.transaction('memos', 'readwrite');
-                deleteTx.objectStore('memos').delete(id);
-                deleteTx.oncomplete = renderMemos;
-            } catch (error) {
-                alert("删除失败，请检查网络");
-            }
-        };
-    };
+                const memoRef = ref(database, 'memos');
+                const newRef = push(memoRef);
+                const firebaseKey = newRef.key;
+                await set(newRef, { ...memo, synced: true, firebaseKey: firebaseKey });
 
-    function renderMemos() {
-        if (!db) return;
-        db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
-            const memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
-            document.getElementById('memo-list').innerHTML = memos.map(m => `
-                <article class="${m.synced ? 'bg-white dark:bg-surface-dark' : 'bg-pending-light dark:bg-pending-dark'} px-5 pt-4 pb-3 border border-black/[0.05] dark:border-white/[0.05] shadow-sm relative">
-                    <div class="flex justify-between items-start mb-1">
-                        <h3 class="text-[18px] font-bold text-primary leading-tight break-words">${m.title}</h3>
-                        <button onclick="deleteMemo(${m.id})" class="text-gray-300 dark:text-gray-600 p-1 -mr-1"><span class="material-symbols-outlined !text-[20px]">close</span></button>
+                const tx = db.transaction('memos', 'readwrite');
+                memo.synced = true;
+                memo.firebaseKey = firebaseKey;
+                tx.objectStore('memos').put(memo);
+                tx.oncomplete = renderMemos;
+            } catch (e) { console.warn("Sync Failed", e); }
+        }
+
+        window.deleteMemo = async (id) => {
+            if (!confirm("确定要永久删除这条备忘吗？（云端也将同步删除）")) return;
+            const tx = db.transaction('memos', 'readonly');
+            tx.objectStore('memos').get(id).onsuccess = async (e) => {
+                const memo = e.target.result;
+                if (!memo) return;
+                try {
+                    if (memo.synced && memo.firebaseKey && currentUser) {
+                        await remove(ref(database, `memos/${memo.firebaseKey}`));
+                    }
+                    const deleteTx = db.transaction('memos', 'readwrite');
+                    deleteTx.objectStore('memos').delete(id);
+                    deleteTx.oncomplete = renderMemos;
+                } catch (error) {
+                    alert("删除失败，请检查网络");
+                }
+            };
+        };
+
+        function renderMemos() {
+            if (!db) return;
+            db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+                let memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
+
+                // 搜索过滤
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    memos = memos.filter(m => (m.title || "").toLowerCase().includes(q));
+                }
+
+                document.getElementById('memo-list').innerHTML = memos.map(m => `
+                <article class="${m.synced ? 'bg-white dark:bg-surface-dark' : 'bg-pending-light dark:bg-pending-dark'} px-6 py-5 border border-black/[0.03] dark:border-white/[0.04] shadow-sm relative transition-all">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight break-words">${m.title}</h3>
+                        <button onclick="deleteMemo(${m.id})" class="text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors p-1 -mr-2"><span class="material-symbols-outlined !text-[20px]">close</span></button>
                     </div>
-                    <div class="prose dark:prose-invert text-[16px] leading-[1.55] text-gray-800 dark:text-gray-200 mb-4 break-words">${m.content}</div>
-                    <div class="flex items-center justify-between pt-3 border-t border-black/[0.02] dark:border-white/[0.03]">
-                        <div class="flex gap-2 flex-wrap">${m.tags.map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2 py-0.5 rounded-lg">#${tag}</span>`).join('')}</div>
-                        <span class="text-[9px] uppercase font-bold tracking-widest ${m.synced ? 'text-primary' : 'text-orange-400'}">${m.synced ? 'Synced' : 'Draft'}</span>
+                    <div class="prose dark:prose-invert text-[15.5px] leading-relaxed text-gray-600 dark:text-gray-300 mb-5 break-words">${m.content}</div>
+                    <div class="flex items-center justify-between pt-4 border-t border-black/[0.03] dark:border-white/[0.05]">
+                        <div class="flex gap-1.5 flex-wrap">${(m.tags || []).map(tag => `<span class="text-gray-500 dark:text-gray-400 text-[10px] font-medium bg-gray-100 dark:bg-white/5 px-2.5 py-0.5 rounded-full ring-1 ring-inset ring-black/[0.02] dark:ring-white/[0.02]">#${tag}</span>`).join('')}</div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full ${m.synced ? 'bg-primary' : 'bg-amber-400'}"></span>
+                            <span class="text-[10px] uppercase font-semibold tracking-wider ${m.synced ? 'text-gray-400 dark:text-gray-500' : 'text-amber-500/80'}">${m.synced ? 'Synced' : 'Draft'}</span>
+                        </div>
                     </div>
                 </article>
             `).join('');
-        };
-    }
+            };
+        }
 
-    document.getElementById('send-btn').addEventListener('click', saveMemo);
-    window.toggleSettings = (s) => document.getElementById('settings-panel').classList.toggle('open', s);
-</script>
+        document.getElementById('send-btn').addEventListener('click', saveMemo);
+        window.toggleSettings = (s) => document.getElementById('settings-panel').classList.toggle('open', s);
+
+        // --- 6. 搜索逻辑 ---
+        const searchContainer = document.getElementById('search-container');
+        const searchInput = document.getElementById('search-input');
+        const searchOpenBtn = document.getElementById('search-open-btn');
+        const headerTitle = document.getElementById('header-title');
+
+        window.toggleSearch = (s) => {
+            searchContainer.classList.toggle('open', s);
+            searchOpenBtn.classList.toggle('hidden-btn', s);
+            headerTitle.style.opacity = s ? '0' : '1';
+            if (s) {
+                setTimeout(() => searchInput.focus(), 300);
+            } else {
+                searchQuery = "";
+                searchInput.value = "";
+                renderMemos();
+            }
+        };
+
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim();
+            renderMemos();
+        });
+    </script>
 </body>
+
 </html>
