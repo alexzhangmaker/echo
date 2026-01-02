@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Echo Memos Desktop</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+
+    <script id="tailwind-config">
+        window.ICONS = {
+            'graphic_eq': '<path d="M0 0h24v24H0V0z" fill="none"/><path d="M7 18h2V6H7v12zm4 4h2V12h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z" fill="currentColor"/>',
+            'settings': '<path d="M0 0h24v24H0V0z" fill="none"/><path d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.09-.16-.26-.25-.44-.25-.06 0-.12.01-.17.03l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.06-.02-.12-.03-.18-.03-.17 0-.34.09-.43.25l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.09.16.26.25.44.25.06 0 .12-.01.17-.03l2.49-1c.52.4 1.08.73-1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.06.02.12.03.18.03.17 0 .34-.09.43-.25l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zm-1.98-1.71c.04.31.05.52.05.73 0 .21-.02.43-.05.73l-.14 1.13.89.7 1.08.84-.7 1.21-1.27-.51-1.04-.42-.9.68c-.43.32-.84.56-1.25.73l-1.06.43-.16 1.13-.2 1.35h-1.4l-.19-1.35-.16-1.13-1.06-.43c-.43-.18-.83-.41-1.23-.71l-.91-.7-1.06.43-1.27.51-.7-1.21 1.08-.84.89-.7-.14-1.13c-.03-.31-.05-.54-.05-.74s.02-.43.05-.73l.14-1.13-.89-.7-1.08-.84.7-1.21 1.27.51 1.04.42.9-.68c.43-.32.84-.56 1.25-.73l1.06-.43.16-1.13.2-1.35h1.39l.19 1.35.16 1.13 1.06.43c.43.18.83.41 1.23.71l.91.7 1.06-.43 1.27-.51.7 1.21-1.07.85-.89.7.14 1.13zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="currentColor"/>',
+            'search': '<path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>',
+            'recents': '<path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" fill="currentColor"/>',
+            'today': '<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>',
+            'pending': '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="currentColor"/>',
+            'trash': '<path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z" fill="currentColor"/>',
+            'add': '<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/>',
+            'folder': '<path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" fill="currentColor"/>',
+            'history': '<path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" fill="currentColor"/>',
+            'chevron_left': '<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" fill="currentColor"/>',
+            'chevron_right': '<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" fill="currentColor"/>',
+            'schedule': '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>',
+            'copy': '<path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" fill="currentColor"/>',
+            'settings_sliders': '<path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" fill="currentColor"/>'
+        };
+
+        window.getIcon = function (name, className = '') {
+            return `<svg class="${className}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${window.ICONS[name] || ''}</svg>`;
+        };
+
+        tailwind.config = {
+            darkMode: "media",
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Noto Sans SC", "Spline Sans", "sans-serif"],
+                    },
+                    colors: {
+                        "primary": "#f59e0b", // Yellow-500 for the add button
+                        "sidebar-bg": "#f1e1d9",
+                        "sidebar-hover": "#e5d4cc",
+                        "sidebar-active": "#dbcdc5",
+                        "main-bg": "#ffffff",
+                        "card-bg": "#fefefe",
+                        "card-border": "#f1f1f1",
+                        "text-main": "#333333",
+                        "text-dim": "#888888"
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            background-color: #ffffff;
+            font-family: 'Spline Sans', 'Noto Sans SC', sans-serif;
+            overflow: hidden;
+        }
+
+        .sidebar-item-active {
+            background-color: #dbcdc5;
+        }
+
+        .note-card-selected {
+            border: 1px solid #f59e0b;
+            background-color: #fffaf0;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d0d0d0;
+        }
+    </style>
+</head>
+
+<body class="flex h-screen w-screen text-text-main antialiased">
+
+    <!-- Sidebar -->
+    <aside class="flex w-64 flex-shrink-0 flex-col bg-sidebar-bg border-r border-black/5">
+        <div class="px-5 pt-8 pb-4">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-text-dim mb-4">概览</h2>
+            <nav class="space-y-1">
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-main flex items-center justify-center">
+                        <script>document.write(getIcon('recents', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">简达</span>
+                </a>
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-main flex items-center justify-center">
+                        <script>document.write(getIcon('today', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">今天</span>
+                </a>
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-main flex items-center justify-center">
+                        <script>document.write(getIcon('pending', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">待事项</span>
+                </a>
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-main flex items-center justify-center">
+                        <script>document.write(getIcon('trash', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">废纸篓</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="px-5 pt-6 pb-4 flex-1">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-text-dim mb-4">示例项目</h2>
+            <nav class="space-y-1">
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-dim flex items-center justify-center">
+                        <script>document.write(getIcon('folder', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">欢迎来到 Agenda</span>
+                </a>
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-dim flex items-center justify-center">
+                        <script>document.write(getIcon('folder', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">胰饮有限公司</span>
+                </a>
+                <a href="#"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-hover transition-colors">
+                    <span class="w-5 h-5 text-text-dim flex items-center justify-center">
+                        <script>document.write(getIcon('folder', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">绝岛高度之旅</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg sidebar-item-active transition-colors">
+                    <span class="w-5 h-5 text-text-dim flex items-center justify-center">
+                        <script>document.write(getIcon('folder', 'w-4 h-4'))</script>
+                    </span>
+                    <span class="text-sm font-medium">开发“耗牛” App</span>
+                </a>
+            </nav>
+        </div>
+
+        <div id="auth-section" class="px-5 pt-4 pb-4 border-t border-black/5">
+            <button onclick="loginGoogle()"
+                class="flex items-center gap-3 px-3 py-2 w-full rounded-lg bg-white/50 hover:bg-white transition-colors text-sm font-medium">
+                <span class="w-5 h-5 flex items-center justify-center">
+                    <script>document.write(getIcon('recents', 'w-4 h-4'))</script>
+                </span>
+                <span>Google 登录</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col bg-white overflow-hidden">
+        <!-- Header -->
+        <header class="flex items-center justify-between px-8 py-6 border-b border-black/5">
+            <div class="flex items-center gap-4">
+                <h1 class="text-2xl font-bold">Echo Memos</h1>
+                <span id="sync-status"
+                    class="text-xs font-bold uppercase tracking-widest bg-gray-100 px-2 py-0.5 rounded-full text-text-dim">Init...</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-text-dim hover:bg-gray-100 rounded-lg transition-colors">
+                    <script>document.write(getIcon('search', 'w-6 h-6'))</script>
+                </button>
+                <button id="global-add-btn"
+                    class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                    <script>document.write(getIcon('add', 'w-6 h-6'))</script>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto px-8 py-10">
+            <div id="memo-list-content" class="max-w-4xl mx-auto space-y-8 pb-20">
+                <!-- Data will go here -->
+            </div>
+        </div>
+
+    </main>
+
+    <div id="custom-modal-overlay"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+            <h3 id="modal-title" class="text-lg font-bold mb-4">提示</h3>
+            <input type="text" id="modal-input"
+                class="w-full bg-gray-100 border-none p-3 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-primary/20">
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel"
+                    class="px-4 py-2 font-semibold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">取消</button>
+                <button id="modal-confirm"
+                    class="px-4 py-2 font-bold bg-primary text-white rounded-xl transition-colors shadow-lg shadow-primary/20">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, push, set, onChildAdded, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { Editor } from 'https://esm.sh/@tiptap/core'
+        import StarterKit from 'https://esm.sh/@tiptap/starter-kit'
+        import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder'
+        import Image from 'https://esm.sh/@tiptap/extension-image'
+        import Link from 'https://esm.sh/@tiptap/extension-link'
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDn5BUZDc4d1Tm0a5jTqAKBhjbDJQM6x8Y",
+            authDomain: "thoughts-cc393.firebaseapp.com",
+            databaseURL: "https://thoughts-cc393-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "thoughts-cc393",
+            storageBucket: "thoughts-cc393.firebasestorage.app",
+            messagingSenderId: "246796483340",
+            appId: "1:246796483340:web:17f681ef495630a4122729"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+        let db, currentUser = null;
+        let searchQuery = "";
+        let editingMemoId = null;
+
+        // --- Modal Helper ---
+        const modalOverlay = document.getElementById('custom-modal-overlay');
+        const modalInput = document.getElementById('modal-input');
+        const modalTitle = document.getElementById('modal-title');
+        const modalCancel = document.getElementById('modal-cancel');
+        const modalConfirm = document.getElementById('modal-confirm');
+        let modalCallback = null;
+
+        window.showPrompt = (title, defaultValue, callback) => {
+            modalTitle.innerText = title;
+            modalInput.value = defaultValue || "";
+            modalOverlay.classList.remove('hidden');
+            modalOverlay.classList.add('flex');
+            modalCallback = callback;
+            setTimeout(() => modalInput.focus(), 100);
+        };
+
+        function closePrompt(success) {
+            const value = modalInput.value;
+            modalOverlay.classList.add('hidden');
+            modalOverlay.classList.remove('flex');
+            if (modalCallback) modalCallback(success ? value : null);
+            modalCallback = null;
+        }
+
+        modalConfirm.onclick = () => closePrompt(true);
+        modalCancel.onclick = () => closePrompt(false);
+
+        // --- Core Functions ---
+        const initDB = () => {
+            const request = indexedDB.open('EchoPWA_Desktop_V1', 1);
+            request.onupgradeneeded = (e) => {
+                const d = e.target.result;
+                const store = d.createObjectStore('memos', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('firebaseKey', 'firebaseKey', { unique: true });
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                renderMemos();
+                if (currentUser) startSmartSync();
+            };
+        };
+
+        async function startSmartSync() {
+            if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+            const memosRef = ref(database, 'memos');
+            try {
+                const snapshot = await get(memosRef);
+                if (snapshot.exists()) {
+                    const tx = db.transaction('memos', 'readwrite');
+                    const store = tx.objectStore('memos');
+                    const index = store.index('firebaseKey');
+                    snapshot.forEach((child) => {
+                        const firebaseKey = child.key;
+                        const cloudMemo = child.val();
+                        index.get(firebaseKey).onsuccess = (e) => {
+                            const existing = e.target.result;
+                            const memoToStore = { ...cloudMemo, firebaseKey, synced: true };
+                            if (existing) {
+                                memoToStore.id = existing.id;
+                                store.put(memoToStore);
+                            } else {
+                                store.add(memoToStore);
+                            }
+                        };
+                    });
+                    tx.oncomplete = renderMemos;
+                }
+            } catch (e) { console.error("Sync Load Failed", e); }
+
+            onChildAdded(memosRef, (snapshot) => {
+                const firebaseKey = snapshot.key;
+                const cloudMemo = snapshot.val();
+                const tx = db.transaction('memos', 'readwrite');
+                const store = tx.objectStore('memos');
+                const index = store.index('firebaseKey');
+                index.get(firebaseKey).onsuccess = (e) => {
+                    if (e.target.result) return;
+                    store.add({ ...cloudMemo, firebaseKey, synced: true });
+                };
+                tx.oncomplete = renderMemos;
+            });
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email.endsWith('@gmail.com')) {
+                currentUser = user;
+                if (db) startSmartSync();
+            }
+        });
+
+        window.loginGoogle = () => signInWithPopup(auth, provider);
+
+        let editor;
+        function initEditor(elementId, content = "") {
+            if (editor) editor.destroy();
+            editor = new Editor({
+                element: document.getElementById(elementId),
+                extensions: [StarterKit, Image, Link, Placeholder.configure({ placeholder: '记录想法...' })],
+                content: content,
+                autofocus: 'end',
+            });
+        }
+
+        window.createNewMemo = () => {
+            const now = new Date();
+            const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const memo = {
+                title: "未命名笔记",
+                content: "",
+                tags: ["随笔"],
+                timestamp: Date.now(),
+                synced: false
+            };
+            const tx = db.transaction('memos', 'readwrite');
+            tx.objectStore('memos').add(memo).onsuccess = (e) => {
+                editingMemoId = e.target.result;
+                renderMemos();
+                setTimeout(() => {
+                    const card = document.querySelector(`[data-id="${editingMemoId}"]`);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        initEditor(`editor-${editingMemoId}`, "");
+                    }
+                }, 100);
+            };
+        };
+
+        window.saveCurrentEdit = async (id) => {
+            if (!editor || editingMemoId !== id) return;
+            const html = editor.getHTML();
+            const text = editor.getText();
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const h1 = tempDiv.querySelector('h1');
+            const title = h1 ? h1.innerText.trim() : "随笔 " + new Date().toLocaleDateString();
+            if (h1) h1.remove();
+
+            const tx = db.transaction('memos', 'readwrite');
+            const store = tx.objectStore('memos');
+            store.get(id).onsuccess = (e) => {
+                const existing = e.target.result;
+                const updated = { ...existing, title, content: tempDiv.innerHTML, timestamp: Date.now(), synced: false };
+                store.put(updated).onsuccess = () => {
+                    editingMemoId = null;
+                    renderMemos();
+                    trySyncToFirebase(updated);
+                };
+            };
+        };
+
+        async function trySyncToFirebase(memo) {
+            if (!currentUser || currentUser.email !== 'alexszhang@gmail.com') return;
+            try {
+                const memosRef = ref(database, 'memos');
+                let memoRef = memo.firebaseKey ? ref(database, `memos/${memo.firebaseKey}`) : push(memosRef);
+                const firebaseKey = memo.firebaseKey || memoRef.key;
+                await set(memoRef, { ...memo, synced: true, firebaseKey });
+
+                const tx = db.transaction('memos', 'readwrite');
+                tx.objectStore('memos').put({ ...memo, synced: true, firebaseKey });
+                tx.oncomplete = renderMemos;
+            } catch (e) { console.warn("Sync Failed", e); }
+        }
+
+        window.deleteDesktopMemo = async (id, e) => {
+            e.stopPropagation();
+            if (!confirm("确定删除？")) return;
+            const tx = db.transaction('memos', 'readwrite');
+            tx.objectStore('memos').delete(id).onsuccess = renderMemos;
+            // Simplified delete (local only for now in desktop POC, or port full logic if needed)
+        };
+
+        window.toggleEdit = (id, content) => {
+            if (editingMemoId === id) return;
+            if (editingMemoId) saveCurrentEdit(editingMemoId);
+            editingMemoId = id;
+            renderMemos();
+            setTimeout(() => initEditor(`editor-${id}`, content), 50);
+        };
+
+        function renderMemos() {
+            if (!db) return;
+            db.transaction('memos', 'readonly').objectStore('memos').getAll().onsuccess = (e) => {
+                let memos = e.target.result.sort((a, b) => b.timestamp - a.timestamp);
+                const list = document.getElementById('memo-list-content');
+                list.innerHTML = memos.map(m => {
+                    const isEditing = editingMemoId === m.id;
+                    return `
+                    <div data-id="${m.id}" onclick="toggleEdit(${m.id}, '${m.content.replace(/'/g, "\\'")}')" 
+                        class="${isEditing ? 'note-card-selected' : 'border border-gray-100 hover:border-gray-200'} p-8 rounded-2xl shadow-sm relative group cursor-pointer transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 ${isEditing ? 'bg-primary' : 'border-2 border-primary'} rounded-full"></span>
+                                <h2 class="text-2xl font-bold ${!m.content && !isEditing ? 'text-text-dim' : ''}">${m.title}</h2>
+                            </div>
+                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="deleteDesktopMemo(${m.id}, event)" class="p-1.5 text-text-dim hover:text-red-500">
+                                    ${getIcon('trash', 'w-5 h-5')}
+                                </button>
+                                ${isEditing ? `<button onclick="saveCurrentEdit(${m.id})" class="p-1.5 text-primary">保存</button>` : ''}
+                            </div>
+                        </div>
+                        <div id="editor-${m.id}" class="prose max-w-none text-text-main text-lg mb-4">
+                            ${!isEditing ? m.content || '<p class="text-text-dim">暂无内容，点击编辑...</p>' : ''}
+                        </div>
+                        ${isEditing ? `<div class="absolute bottom-4 left-0 w-1 bg-primary h-8 rounded-r"></div>` : ''}
+                        <div class="flex items-center justify-between pt-4 border-t ${isEditing ? 'border-primary/10' : 'border-gray-50'}">
+                            <div class="flex gap-2 flex-wrap">
+                                ${(m.tags || []).map(tag => `<span class="text-primary text-[11px] font-bold bg-primary/10 px-2.5 py-1 rounded-lg">#${tag}</span>`).join('')}
+                            </div>
+                            <span class="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">
+                                ${new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+            };
+        }
+
+        initDB();
+        // Bind UI
+        document.getElementById('global-add-btn').onclick = createNewMemo;
+    </script>
+</body>
+
+</html>
