@@ -95,6 +95,50 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #d0d0d0;
         }
+
+        /* Context Menu Styles */
+        #context-menu,
+        #memo-context-menu {
+            position: fixed;
+            z-index: 1000;
+            min-width: 160px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.2);
+            padding: 6px;
+            font-family: inherit;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #444;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .menu-item:hover {
+            background-color: #f1f1f1;
+            color: #000;
+        }
+
+        .menu-item.danger:hover {
+            background-color: #fff1f1;
+            color: #ff3b30;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: rgba(0, 0, 0, 0.05);
+            margin: 6px;
+        }
     </style>
 </head>
 
@@ -477,7 +521,132 @@
         initDB();
         // Bind UI
         document.getElementById('global-add-btn').onclick = createNewMemo;
+
+        // --- Context Menu Logic ---
+        const contextMenu = document.getElementById('context-menu');
+        const memoContextMenu = document.getElementById('memo-context-menu');
+
+        function showMenu(menu, e, target) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideMenus();
+
+            // Highlight target
+            if (target) {
+                target.classList.add('bg-sidebar-hover', 'card-active-glow');
+                menu.setAttribute('data-target-id', target.getAttribute('data-id') || target.innerText.trim());
+            }
+
+            menu.classList.remove('hidden');
+            menu.classList.add('flex', 'flex-col');
+
+            let x = e.clientX;
+            let y = e.clientY;
+
+            const menuWidth = 180;
+            const menuHeight = menu.offsetHeight || 150;
+
+            if (x + menuWidth > window.innerWidth) x -= menuWidth;
+            if (y + menuHeight > window.innerHeight) y -= menuHeight;
+
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+        }
+
+        function hideMenus() {
+            contextMenu.classList.add('hidden');
+            memoContextMenu.classList.add('hidden');
+            document.querySelectorAll('.bg-sidebar-hover, .card-active-glow').forEach(el => {
+                if (!el.classList.contains('sidebar-item-active') && !el.classList.contains('note-card-selected')) {
+                    el.classList.remove('bg-sidebar-hover', 'card-active-glow');
+                }
+            });
+        }
+
+        window.addEventListener('click', hideMenus);
+        window.addEventListener('contextmenu', (e) => {
+            if (!e.target.closest('.sidebar-item') && !e.target.closest('.memo-card')) {
+                hideMenus();
+            }
+        });
+
+        // Add contextmenu to sidebar items
+        document.querySelectorAll('aside nav a').forEach(item => {
+            item.classList.add('sidebar-item');
+            item.addEventListener('contextmenu', (e) => showMenu(contextMenu, e, item));
+        });
+
+        // Delegate contextmenu for dynamically rendered memo cards
+        document.getElementById('memo-list-content').addEventListener('contextmenu', (e) => {
+            const card = e.target.closest('[data-id]');
+            if (card) {
+                showMenu(memoContextMenu, e, card);
+            }
+        });
+
+        window.handleMenuAction = (action) => {
+            const memoId = parseInt(memoContextMenu.getAttribute('data-target-id'));
+            const sidebarTarget = contextMenu.getAttribute('data-target-id');
+
+            if (action === 'delete') {
+                if (memoId) deleteDesktopMemo(memoId, { stopPropagation: () => { } });
+                else alert("删除: " + sidebarTarget);
+            } else if (action === 'rename') {
+                if (memoId) {
+                    const tx = db.transaction('memos', 'readonly');
+                    tx.objectStore('memos').get(memoId).onsuccess = (e) => {
+                        const memo = e.target.result;
+                        showPrompt("重命名笔记", memo.title, (newTitle) => {
+                            if (newTitle) {
+                                const txW = db.transaction('memos', 'readwrite');
+                                const updated = { ...memo, title: newTitle, synced: false };
+                                txW.objectStore('memos').put(updated).onsuccess = () => {
+                                    renderMemos();
+                                    trySyncToFirebase(updated);
+                                };
+                            }
+                        });
+                    };
+                } else {
+                    showPrompt("重命名分类", sidebarTarget, (newName) => {
+                        if (newName) alert("已重命名为: " + newName);
+                    });
+                }
+            } else if (action === 'new') {
+                createNewMemo();
+            }
+            hideMenus();
+        };
     </script>
+
+    <!-- Context Menus -->
+    <div id="context-menu" class="hidden">
+        <div class="menu-item" onclick="handleMenuAction('new')">
+            <script>document.write(getIcon('add', 'w-4 h-4'))</script>
+            新建项目
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" onclick="handleMenuAction('rename')">
+            <script>document.write(getIcon('edit', 'w-4 h-4'))</script>
+            重命名
+        </div>
+        <div class="menu-item danger" onclick="handleMenuAction('delete')">
+            <script>document.write(getIcon('trash', 'w-4 h-4'))</script>
+            删除
+        </div>
+    </div>
+
+    <div id="memo-context-menu" class="hidden">
+        <div class="menu-item" onclick="handleMenuAction('rename')">
+            <script>document.write(getIcon('edit', 'w-4 h-4'))</script>
+            重命名笔记
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-item danger" onclick="handleMenuAction('delete')">
+            <script>document.write(getIcon('trash', 'w-4 h-4'))</script>
+            删除笔记
+        </div>
+    </div>
 </body>
 
 </html>

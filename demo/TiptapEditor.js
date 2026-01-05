@@ -31,6 +31,7 @@ export class TiptapEditor {
         this.bindEvents();
     }
 
+
     injectStyles() {
         if (document.getElementById('tiptap-editor-styles')) return;
         const style = document.createElement('style');
@@ -895,5 +896,20 @@ export class TiptapEditor {
         if (!this.editor) return '';
         if (format === 'json') return this.editor.getJSON();
         return this.editor.storage.markdown.getMarkdown();
+    }
+
+    getHeadings() {
+        if (!this.editor) return [];
+        const headings = [];
+        this.editor.state.doc.descendants((node, pos) => {
+            if (node.type.name === 'heading') {
+                headings.push({
+                    level: node.attrs.level,
+                    text: node.textContent,
+                    pos: pos
+                });
+            }
+        });
+        return headings;
     }
 }
