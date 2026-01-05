@@ -8,6 +8,10 @@ import MathExtension from 'https://esm.sh/@aarkue/tiptap-math-extension';
 import Suggestion from 'https://esm.sh/@tiptap/suggestion';
 import TaskList from 'https://esm.sh/@tiptap/extension-task-list';
 import TaskItem from 'https://esm.sh/@tiptap/extension-task-item';
+import { Table } from 'https://esm.sh/@tiptap/extension-table';
+import { TableHeader } from 'https://esm.sh/@tiptap/extension-table-header';
+import { TableRow } from 'https://esm.sh/@tiptap/extension-table-row';
+import { TableCell } from 'https://esm.sh/@tiptap/extension-table-cell';
 
 export class TiptapEditor {
     constructor(container, options = {}) {
@@ -38,16 +42,18 @@ export class TiptapEditor {
         style.id = 'tiptap-editor-styles';
         style.innerHTML = `
             .editor-container {
-                max-width: 900px;
-                margin: 40px auto;
+                width: 95%;
+                max-width: 1100px;
+                margin: 20px auto;
                 background: white;
-                border-radius: 24px;
+                border-radius: 20px;
                 box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 0 1px rgba(0, 0, 0, 0.1);
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
-                height: calc(100vh - 80px);
+                height: calc(100vh - 60px);
                 border: 1px solid rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
                 font-family: 'Spline Sans', 'Noto Sans SC', sans-serif;
             }
             /* Custom Slim Scrollbar */
@@ -118,7 +124,10 @@ export class TiptapEditor {
                 font-size: 20px;
                 font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             }
-            .editor-content { flex: 1; padding: 40px 60px; outline: none; overflow-y: auto; }
+            .editor-content { flex: 1; padding: 40px 60px; outline: none; overflow-y: auto; scroll-behavior: smooth; }
+            @media (max-width: 768px) {
+                .editor-content { padding: 30px 20px; }
+            }
             :root {
                 --heading-size-h1: 2.25rem;
                 --heading-size-h2: 1.875rem;
@@ -205,6 +214,59 @@ export class TiptapEditor {
             .data-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
             .dark .data-table td { border-color: #334155; color: #cbd5e1; }
             .data-table tr:last-child td { border-bottom: none; }
+
+            /* Standard Tiptap Table Styles */
+            .ProseMirror table {
+                border-collapse: collapse;
+                table-layout: fixed;
+                width: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+            .ProseMirror td, .ProseMirror th {
+                min-width: 1em;
+                border: 2px solid #ced4da;
+                padding: 3px 5px;
+                vertical-align: top;
+                box-sizing: border-box;
+                position: relative;
+            }
+            .ProseMirror th {
+                font-weight: bold;
+                text-align: left;
+                background-color: #f1f3f5;
+            }
+            .dark .ProseMirror td, .dark .ProseMirror th {
+                border-color: #495057;
+            }
+            .dark .ProseMirror th {
+                background-color: #212529;
+            }
+            .ProseMirror .selectedCell:after {
+                z-index: 2;
+                position: absolute;
+                content: "";
+                left: 0; right: 0; top: 0; bottom: 0;
+                background: rgba(200, 200, 255, 0.4);
+                pointer-events: none;
+            }
+            .ProseMirror .column-resize-handle {
+                position: absolute;
+                right: -2px;
+                top: 0;
+                bottom: -2px;
+                width: 4px;
+                background-color: #adf;
+                pointer-events: none;
+            }
+            .tableWrapper {
+                overflow-x: auto;
+                margin: 1em 0;
+            }
+            .resize-cursor {
+                cursor: ew-resize;
+                cursor: col-resize;
+            }
 
             /* Task List Styles */
             ul[data-type="taskList"] {
@@ -644,7 +706,16 @@ export class TiptapEditor {
             element: this.els.editor,
             extensions: [
                 StarterKit,
-                Markdown,
+                Table.configure({
+                    resizable: true,
+                }),
+                TableRow,
+                TableHeader,
+                TableCell,
+                Markdown.configure({
+                    html: false,
+                    transformPastedText: true,
+                }),
                 MathExtension.configure({ evaluation: false }),
                 Link.configure({ openOnClick: false }),
                 Image,
