@@ -112,6 +112,11 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        .settings-tab-btn.active {
+            color: #7c3aed;
+            border-bottom-color: #7c3aed;
+        }
     </style>
 </head>
 
@@ -194,7 +199,7 @@
             </div>
         </div>
         <div
-            class="h-10 flex items-center justify-between px-6 border-b border-transparent text-text-muted-light dark:text-text-muted-dark text-sm">
+            class="h-8 flex items-center justify-between px-6 border-b border-transparent text-text-muted-light dark:text-text-muted-dark text-sm">
             <div class="flex items-center space-x-2">
             </div>
             <div class="flex items-center space-x-3">
@@ -208,7 +213,7 @@
                         class="material-icons-outlined text-lg">more_horiz</span></button>
             </div>
         </div>
-        <div class="flex-1 overflow-hidden px-4 md:px-8 lg:px-12 pb-10 pt-4">
+        <div class="flex-1 overflow-hidden px-4 md:px-8 lg:px-12 pb-10 pt-1">
             <div class="max-w-[1200px] mx-auto h-full">
                 <div id="document-content" class="min-h-[500px]">
                     <!-- Tiptap Editor will be injected here -->
@@ -427,110 +432,191 @@
                         <span class="material-icons-outlined text-xl">close</span>
                     </button>
                 </div>
-                <div class="p-8 space-y-8 flex-1 overflow-y-auto max-h-[75vh] custom-scrollbar">
-                    <!-- Google Drive Category -->
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 pb-2 border-b border-border-light dark:border-border-dark">
-                            <span class="material-icons-outlined text-blue-500 text-sm">cloud_queue</span>
-                            <h4
-                                class="text-xs font-bold text-text-muted-light dark:text-text-muted-dark uppercase tracking-widest">
-                                Google Drive 配置</h4>
+                <div
+                    class="flex border-b border-border-light dark:border-border-dark bg-sidebar-light/50 dark:bg-sidebar-dark/50 overflow-x-auto no-scrollbar">
+                    <button
+                        class="settings-tab-btn active px-8 py-4 text-[11px] font-bold uppercase tracking-widest transition-all border-b-2 border-transparent whitespace-nowrap"
+                        data-tab="tab-cloud">
+                        <div class="flex items-center gap-2">
+                            <span class="material-icons-outlined text-sm">cloud</span>
+                            云端同步
                         </div>
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Client
-                                    ID</label>
-                                <input type="text" id="setting-gdrive-client-id" placeholder="Enter GDrive Client ID"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                    </button>
+                    <button
+                        class="settings-tab-btn px-8 py-4 text-[11px] font-bold uppercase tracking-widest text-text-muted-light dark:text-text-muted-dark hover:text-text-light dark:hover:text-text-dark transition-all border-b-2 border-transparent whitespace-nowrap"
+                        data-tab="tab-editor">
+                        <div class="flex items-center gap-2">
+                            <span class="material-icons-outlined text-sm">palette</span>
+                            编辑器样式
+                        </div>
+                    </button>
+                </div>
+                <div class="p-8 space-y-8 flex-1 overflow-y-auto max-h-[75vh] custom-scrollbar">
+                    <!-- Tab: Cloud Sync -->
+                    <div id="tab-cloud" class="settings-tab-content space-y-8">
+                        <!-- Google Drive Category -->
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-border-light dark:border-border-dark">
+                                <span class="material-icons-outlined text-blue-500 text-sm">cloud_queue</span>
+                                <h4
+                                    class="text-xs font-bold text-text-muted-light dark:text-text-muted-dark uppercase tracking-widest">
+                                    Google Drive 配置</h4>
                             </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">API
-                                    Key</label>
-                                <input type="password" id="setting-gdrive-api-key" placeholder="Enter GDrive API Key"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Client
+                                        ID</label>
+                                    <input type="text" id="setting-gdrive-client-id"
+                                        placeholder="Enter GDrive Client ID"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">API
+                                        Key</label>
+                                    <input type="password" id="setting-gdrive-api-key"
+                                        placeholder="Enter GDrive API Key"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Note
+                                        文件目录 ID (Folder ID)</label>
+                                    <input type="text" id="setting-gdrive-folder-id"
+                                        placeholder="Enter Folder ID (e.g. root)"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
                             </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Note
-                                    文件目录 ID (Folder ID)</label>
-                                <input type="text" id="setting-gdrive-folder-id"
-                                    placeholder="Enter Folder ID (e.g. root)"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                        </div>
+
+                        <!-- Firebase Category -->
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-border-light dark:border-border-dark">
+                                <span
+                                    class="material-icons-outlined text-orange-500 text-sm">local_fire_department</span>
+                                <h4
+                                    class="text-xs font-bold text-text-muted-light dark:text-text-muted-dark uppercase tracking-widest">
+                                    Firebase Realtime DB 配置</h4>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">API
+                                        Key</label>
+                                    <input type="password" id="setting-firebase-api-key"
+                                        placeholder="Enter Firebase API Key (optional)"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Project
+                                        ID</label>
+                                    <input type="text" id="setting-firebase-project-id"
+                                        placeholder="Enter Firebase Project ID"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Auth
+                                        Domain</label>
+                                    <input type="text" id="setting-firebase-auth-domain"
+                                        placeholder="project-id.firebaseapp.com"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Database
+                                        URL</label>
+                                    <input type="text" id="setting-firebase-db-url"
+                                        placeholder="https://project-id.firebaseio.com"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Storage
+                                        Bucket</label>
+                                    <input type="text" id="setting-firebase-storage-bucket"
+                                        placeholder="project-id.appspot.com"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Messaging
+                                        Sender ID</label>
+                                    <input type="text" id="setting-firebase-sender-id" placeholder="Enter Sender ID"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">App
+                                        ID</label>
+                                    <input type="text" id="setting-firebase-app-id" placeholder="Enter App ID"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Measurement
+                                        ID (Optional)</label>
+                                    <input type="text" id="setting-firebase-measurement-id" placeholder="G-XXXXXXXXXX"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Firebase Category -->
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 pb-2 border-b border-border-light dark:border-border-dark">
-                            <span class="material-icons-outlined text-orange-500 text-sm">local_fire_department</span>
-                            <h4
-                                class="text-xs font-bold text-text-muted-light dark:text-text-muted-dark uppercase tracking-widest">
-                                Firebase Realtime DB 配置</h4>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">API
-                                    Key</label>
-                                <input type="password" id="setting-firebase-api-key"
-                                    placeholder="Enter Firebase API Key (optional)"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                    <!-- Tab: Editor Styling -->
+                    <div id="tab-editor" class="settings-tab-content hidden space-y-8">
+                        <div class="space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-border-light dark:border-border-dark">
+                                <span class="material-icons-outlined text-purple-500 text-sm">font_download</span>
+                                <h4
+                                    class="text-xs font-bold text-text-muted-light dark:text-text-muted-dark uppercase tracking-widest">
+                                    排版与视觉</h4>
                             </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Project
-                                    ID</label>
-                                <input type="text" id="setting-firebase-project-id"
-                                    placeholder="Enter Firebase Project ID"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Auth
-                                    Domain</label>
-                                <input type="text" id="setting-firebase-auth-domain"
-                                    placeholder="project-id.firebaseapp.com"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Database
-                                    URL</label>
-                                <input type="text" id="setting-firebase-db-url"
-                                    placeholder="https://project-id.firebaseio.com"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Storage
-                                    Bucket</label>
-                                <input type="text" id="setting-firebase-storage-bucket"
-                                    placeholder="project-id.appspot.com"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Messaging
-                                    Sender ID</label>
-                                <input type="text" id="setting-firebase-sender-id" placeholder="Enter Sender ID"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">App
-                                    ID</label>
-                                <input type="text" id="setting-firebase-app-id" placeholder="Enter App ID"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
-                            </div>
-                            <div class="space-y-1.5">
-                                <label
-                                    class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">Measurement
-                                    ID (Optional)</label>
-                                <input type="text" id="setting-firebase-measurement-id" placeholder="G-XXXXXXXXXX"
-                                    class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">字体家族
+                                        (Font Family)</label>
+                                    <select id="setting-editor-font-family"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all">
+                                        <option value="'Spline Sans', 'Noto Sans SC', sans-serif">Spline Sans (默认)
+                                        </option>
+                                        <option value="'Inter', sans-serif">Inter</option>
+                                        <option value="'Noto Sans SC', sans-serif">Noto Sans SC</option>
+                                        <option value="'Roboto', sans-serif">Roboto</option>
+                                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">背景颜色
+                                        (Background)</label>
+                                    <div class="flex gap-2">
+                                        <input type="color" id="setting-editor-bg-color" value="#ffffff"
+                                            class="w-10 h-10 p-0.5 bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-lg cursor-pointer transition-all" />
+                                        <input type="text" id="setting-editor-bg-color-hex" placeholder="#FFFFFF"
+                                            class="flex-1 bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-1.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                    </div>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">字体大小
+                                        (Font Size)</label>
+                                    <input type="text" id="setting-editor-font-size" placeholder="1.125rem"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label
+                                        class="text-[11px] font-semibold text-text-muted-light dark:text-text-muted-dark ml-1">行高
+                                        (Line Height)</label>
+                                    <input type="text" id="setting-editor-line-height" placeholder="1.7"
+                                        class="w-full bg-sidebar-light dark:bg-sidebar-dark border border-border-light dark:border-border-dark rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary outline-none transition-all placeholder:opacity-30" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -587,6 +673,8 @@
 
         <script type="module">
             import { TiptapEditor } from './lib/TiptapEditor.js';
+
+            let editorInstance = null;
 
             // --- Settings Store Logic (IndexedDB) ---
             const SETTINGS_DB_NAME = 'EchoSettingsDB';
@@ -658,6 +746,17 @@
                     request.onsuccess = () => resolve();
                     request.onerror = () => reject(request.error);
                 });
+            };
+
+            const applyEditorStyles = (config) => {
+                if (editorInstance) {
+                    editorInstance.applyPrefs({
+                        fontFamily: config.editorFontFamily,
+                        bodySize: config.editorFontSize,
+                        lineHeight: config.editorLineHeight,
+                        bgColor: config.editorBgColor
+                    });
+                }
             };
 
             const getLocalOrder = async () => {
@@ -1135,7 +1234,7 @@
                     }
                 }
 
-                let editorInstance = null;
+
                 async function initEditor() {
                     editorInstance = new TiptapEditor('#document-content', { showToolbar: false });
                     const checkInterval = setInterval(() => {
@@ -1213,6 +1312,7 @@
                 initEditor();
 
                 const config = await getSettings();
+                applyEditorStyles(config);
 
                 // Load Local Cache immediately
                 state.fbFolders = await getFoldersCache();
@@ -1345,6 +1445,19 @@
                         document.getElementById('setting-firebase-app-id').value = config.firebaseAppId || '';
                         document.getElementById('setting-firebase-measurement-id').value = config.firebaseMeasurementId || '';
 
+                        // Editor Styles
+                        const fontFamilySelect = document.getElementById('setting-editor-font-family');
+                        const bgColorInput = document.getElementById('setting-editor-bg-color');
+                        const bgColorHexInput = document.getElementById('setting-editor-bg-color-hex');
+                        const fontSizeInput = document.getElementById('setting-editor-font-size');
+                        const lineHeightInput = document.getElementById('setting-editor-line-height');
+
+                        if (fontFamilySelect) fontFamilySelect.value = config.editorFontFamily || "'Spline Sans', 'Noto Sans SC', sans-serif";
+                        if (bgColorInput) bgColorInput.value = config.editorBgColor || (document.documentElement.classList.contains('dark') ? '#1e1e1e' : '#ffffff');
+                        if (bgColorHexInput) bgColorHexInput.value = (config.editorBgColor || (document.documentElement.classList.contains('dark') ? '#1e1e1e' : '#ffffff')).toUpperCase();
+                        if (fontSizeInput) fontSizeInput.value = config.editorFontSize || '1.125rem';
+                        if (lineHeightInput) lineHeightInput.value = config.editorLineHeight || '1.7';
+
                         settingsDialog.classList.remove('hidden');
                     });
                 }
@@ -1368,10 +1481,17 @@
                             firebaseStorageBucket: document.getElementById('setting-firebase-storage-bucket').value,
                             firebaseSenderId: document.getElementById('setting-firebase-sender-id').value,
                             firebaseAppId: document.getElementById('setting-firebase-app-id').value,
-                            firebaseMeasurementId: document.getElementById('setting-firebase-measurement-id').value
+                            firebaseMeasurementId: document.getElementById('setting-firebase-measurement-id').value,
+
+                            // Editor Styles
+                            editorFontFamily: document.getElementById('setting-editor-font-family').value,
+                            editorBgColor: document.getElementById('setting-editor-bg-color').value,
+                            editorFontSize: document.getElementById('setting-editor-font-size').value,
+                            editorLineHeight: document.getElementById('setting-editor-line-height').value
                         };
 
                         await saveSettings(config);
+                        applyEditorStyles(config);
                         alert('设置已保存！部分更改可能需要刷新页面才能生效。');
                         closeSettings();
                     });
@@ -1702,6 +1822,43 @@
                         syncCurrentNote();
                     }
                 });
+
+                // --- Settings Tabs Logic ---
+                document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const tabId = btn.getAttribute('data-tab');
+                        // Update buttons
+                        document.querySelectorAll('.settings-tab-btn').forEach(b => {
+                            b.classList.remove('active');
+                            b.classList.add('text-text-muted-light', 'dark:text-text-muted-dark');
+                            b.classList.remove('border-primary');
+                        });
+                        btn.classList.add('active');
+                        btn.classList.remove('text-text-muted-light', 'dark:text-text-muted-dark');
+                        btn.classList.add('border-primary');
+
+                        // Update content
+                        document.querySelectorAll('.settings-tab-content').forEach(content => {
+                            content.classList.add('hidden');
+                        });
+                        document.getElementById(tabId).classList.remove('hidden');
+                    });
+                });
+
+                // Editor Style Color Sync
+                const editorBgColor = document.getElementById('setting-editor-bg-color');
+                const editorBgColorHex = document.getElementById('setting-editor-bg-color-hex');
+                if (editorBgColor && editorBgColorHex) {
+                    editorBgColor.addEventListener('input', (e) => {
+                        editorBgColorHex.value = e.target.value.toUpperCase();
+                    });
+                    editorBgColorHex.addEventListener('input', (e) => {
+                        const val = e.target.value;
+                        if (/^#[0-9A-F]{6}$/i.test(val)) {
+                            editorBgColor.value = val;
+                        }
+                    });
+                }
 
                 render();
             });
